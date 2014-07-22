@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"github.com/TwitchScience/scoop_protocol/msg_signer"
+	"github.com/twitchscience/scoop_protocol/msg_signer"
 	"testing"
 	"time"
 )

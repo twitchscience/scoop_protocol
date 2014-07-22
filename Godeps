@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/TwitchScience/scoop_protocol",
+	"ImportPath": "github.com/twitchscience/scoop_protocol",
 	"GoVersion": "go1.3",
 	"Packages": [
 		"./..."

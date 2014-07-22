@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TwitchScience/scoop_protocol/msg_signer"
+	"github.com/twitchscience/scoop_protocol/msg_signer"
 )
 
 type ColumnDefinition struct {

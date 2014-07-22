@@ -1,6 +1,6 @@
 package schema
 
-import "github.com/TwitchScience/scoop_protocol/scoop_protocol"
+import "github.com/twitchscience/scoop_protocol/scoop_protocol"
 
 type UpdateSchemaRequest struct {
 	EventName string `json:"-"`
