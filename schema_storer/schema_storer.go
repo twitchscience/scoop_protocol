@@ -1,4 +1,4 @@
-package schema
+package schema_storer
 
 import "errors"
 
