@@ -1,8 +1,6 @@
 package schema
 
-import (
-	"errors"
-)
+import "errors"
 
 type MigratorBackend struct {
 	possibleMigration *Migration
@@ -53,7 +51,7 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 	m.currentEvent.ColumnSchema.TableOption = m.possibleMigration.TableOption
 
 	//increment version number
-	m.currentEvent.Version += 1
+	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
 	return m.currentEvent, nil
 }
@@ -66,13 +64,13 @@ func (m *MigratorBackend) removeTable() (*Event, error) {
 
 	m.currentEvent.ColumnSchema = ColumnSchema{}
 
-	m.currentEvent.Version += 1
+	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
 	return m.currentEvent, nil
 }
 
 func (m *MigratorBackend) updateTable() (*Event, error) {
-	m.currentEvent.Version += 1
+	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
 	return m.currentEvent, nil
 }
@@ -85,7 +83,7 @@ func (m *MigratorBackend) addColumn(ColumnOperation ColumnOperation) error {
 
 	//contains valid transformer
 	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
-		return errors.New("Add Column operation transformer is invalid.")
+		return errors.New("Add Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
 	}
 
 	//is not a column that already exists in the table // MODIFY TO ONLY CHECK OUTBOUND!!!!!!! ENCAPSULATE INTO METHOD
