@@ -1,6 +1,12 @@
 package dynamo_connector
 
-import "github.com/twitchscience/scoop_protocol/schema_storer"
+import (
+	"errors"
+
+	"github.com/twitchscience/scoop_protocol/schema_storer"
+)
+
+const DoesNotExist = errors.New("This item does not exist in dynamo")
 
 type TestDynamoConnector struct {
 }
@@ -18,7 +24,7 @@ func (c *TestDynamoConnector) GetSchema(tableName string) (*schema_storer.TableS
 	return &schema_storer.TableSchema{}, nil
 }
 
-func (c *TestDynamoConnector) DoesExist() bool {
+func (c *TestDynamoConnector) Exists() bool {
 	return false
 }
 

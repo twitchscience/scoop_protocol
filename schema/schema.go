@@ -1,15 +1,82 @@
 package schema
 
-import "github.com/twitchscience/scoop_protocol/scoop_protocol"
-
-type UpdateSchemaRequest struct {
-	EventName string `json:"-"`
-	Columns   []scoop_protocol.ColumnDefinition
+type Migrator interface {
+	Validate() (*Event, error)
 }
 
-func (u *UpdateSchemaRequest) ConvertToRedshiftUpdate() *scoop_protocol.Config {
-	return &scoop_protocol.Config{
-		EventName: u.EventName,
-		Columns:   u.Columns,
+type Event struct {
+	Name            string
+	Version         int
+	ColumnSchema    ColumnSchema
+	ParentMigration Migration
+}
+
+type ColumnSchema struct {
+	TableOption TableOption
+	Columns     []ColumnDefinition
+}
+
+type ColumnDefinition struct {
+	InboundName           string
+	OutboundName          string
+	Transformer           string
+	ColumnCreationOptions string
+}
+
+type Migration struct {
+	TableOperation   string
+	Name             string
+	ColumnOperations []ColumnOperation
+	TableOption      TableOption
+}
+
+type ColumnOperation struct {
+	Operation           string
+	InboundName         string
+	OutboundName        string
+	NewColumnDefinition ColumnDefinition
+}
+
+type TableOption struct {
+	DistKey []string
+	SortKey []string
+}
+
+func (s *ColumnSchema) IsEmpty() bool {
+	if len(s.Columns) == 0 {
+		return true
 	}
+	return false
+}
+
+func (to *TableOption) IsEmpty() bool {
+	if len(to.DistKey) == 0 && len(to.SortKey) == 0 {
+		return true
+	}
+	return false
+}
+
+type HashSet map[string]HashMember
+
+type HashMember struct{}
+
+func (hs HashSet) Contains(val string) bool {
+	_, ok := hs[val]
+	return ok
+}
+
+//hash member struct
+var transformList = HashSet{
+	"bigint":             HashMember{},
+	"float":              HashMember{},
+	"varchar":            HashMember{},
+	"ipAsnInteger":       HashMember{},
+	"int":                HashMember{},
+	"bool":               HashMember{},
+	"ipCity":             HashMember{},
+	"ipCountry":          HashMember{},
+	"ipRegion":           HashMember{},
+	"ipAsn":              HashMember{},
+	"stringToIntegerMD5": HashMember{},
+	"f@timestamp@unix":   HashMember{},
 }
