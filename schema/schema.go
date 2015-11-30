@@ -1,5 +1,7 @@
 package schema
 
+import "errors"
+
 type Migrator interface {
 	Validate() (*Event, error)
 }
@@ -54,6 +56,16 @@ func (to *TableOption) IsEmpty() bool {
 		return true
 	}
 	return false
+}
+
+func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
+	for _, column := range e.ColumnSchema.Columns {
+		if column.OutboundName == ColumnOperation.OutboundName {
+			return errors.New("Column with same Outbound name already exists in table")
+		}
+	}
+	e.ColumnSchema.Columns = append(e.ColumnSchema.Columns, ColumnOperation.NewColumnDefinition)
+	return nil
 }
 
 type HashSet map[string]HashMember

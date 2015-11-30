@@ -135,5 +135,4 @@ func TestAddTable(t *testing.T) {
 		t.Logf("%+v", newEvent)
 		t.Fail()
 	}
-
 }
