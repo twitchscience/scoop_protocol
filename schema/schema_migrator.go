@@ -86,14 +86,5 @@ func (m *MigratorBackend) addColumn(ColumnOperation ColumnOperation) error {
 		return errors.New("Add Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
 	}
 
-	//is not a column that already exists in the table // MODIFY TO ONLY CHECK OUTBOUND!!!!!!! ENCAPSULATE INTO METHOD
-	for _, column := range m.currentEvent.ColumnSchema.Columns {
-		if column.InboundName == ColumnOperation.InboundName && column.OutboundName == ColumnOperation.OutboundName {
-			return errors.New("Column with same Inbound and Outbound name already exists in table")
-		}
-	}
-
-	//adds column to table
-	m.currentEvent.ColumnSchema.Columns = append(m.currentEvent.ColumnSchema.Columns, ColumnOperation.NewColumnDefinition)
-	return nil
+	return m.currentEvent.AddColumn(ColumnOperation)
 }
