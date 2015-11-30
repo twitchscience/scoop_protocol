@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 )
 
@@ -27,8 +28,8 @@ func buildColumnDefinitionBatch(num int, inboundName, outboundName, transformer,
 	return ColumnDefinition{
 		InboundName:           fmt.Sprintf(inboundName+"%d", num),
 		OutboundName:          fmt.Sprintf(outboundName+"%d", num),
-		Transformer:           fmt.Sprintf(transformer+"%d", num),
-		ColumnCreationOptions: fmt.Sprintf(columnCreationOptions+"%d", num),
+		Transformer:           transformer,
+		ColumnCreationOptions: columnCreationOptions,
 	}
 }
 
@@ -48,8 +49,8 @@ func buildColumnOperationBatch(num int, operation, inboundNameKey, outboundNameK
 		NewColumnDefinition: ColumnDefinition{
 			InboundName:           fmt.Sprintf(inboundName+"%d", num),
 			OutboundName:          fmt.Sprintf(outboundName+"%d", num),
-			Transformer:           fmt.Sprintf(transformer+"%d", num),
-			ColumnCreationOptions: fmt.Sprintf(columnCreationOptions+"%d", num),
+			Transformer:           transformer,
+			ColumnCreationOptions: columnCreationOptions,
 		},
 	}
 }
@@ -124,10 +125,15 @@ func TestAddTable(t *testing.T) {
 
 	newEvent, err := migrator.ApplyMigration()
 	if err != nil {
+		t.Log(err.Error())
 		t.Log("err was incorrect, should have passed")
 		t.Fail()
 	}
 
-	t.Log(expectedEvent)
-	t.Log(*newEvent)
+	if !reflect.DeepEqual(expectedEvent, *newEvent) {
+		t.Logf("%+v", expectedEvent)
+		t.Logf("%+v", newEvent)
+		t.Fail()
+	}
+
 }
