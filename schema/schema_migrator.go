@@ -75,8 +75,8 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 	if m.currentEvent.ColumnSchema.IsEmpty() {
 		return nil, errors.New("Cannot update table that is already empty, add table first")
 	}
-	
-	  //table Option check? before or after migration? Still too consider.
+
+	//table Option check? before or after migration? Still too consider.
 
 	for _, ColumnOperation := range m.possibleMigration.ColumnOperations {
 
@@ -90,7 +90,7 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 		case "update":
 			err = m.updateColumn(ColumnOperation)
 		default:
-			err = errors.New("Not a valid Column Operation")
+			err = errors.New("Not a valid Column Operation") //in case column operation string is mangled.
 		}
 
 		if err != nil {
@@ -119,6 +119,7 @@ func (m *MigratorBackend) addColumn(ColumnOperation ColumnOperation) error {
 }
 
 func (m *MigratorBackend) removeColumn(ColumnOperation ColumnOperation) error {
+	//column operation is remove
 	if ColumnOperation.Operation != "remove" {
 		return errors.New("Column Operation is not 'remove'")
 	}
@@ -127,5 +128,10 @@ func (m *MigratorBackend) removeColumn(ColumnOperation ColumnOperation) error {
 }
 
 func (m *MigratorBackend) updateColumn(ColumnOperation ColumnOperation) error {
-	return nil
+	//column operation is update
+	if ColumnOperation.Operation != "update" {
+		return errors.New("Column Operation is not 'update'")
+	}
+
+	return m.currentEvent.UpdateColumn(ColumnOperation)
 }
