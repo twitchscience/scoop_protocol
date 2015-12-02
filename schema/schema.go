@@ -69,6 +69,7 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 }
 
 func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
+	//finds index in list which corresponds to column that needs to be removed
 	i := -1
 	for index, column := range e.ColumnSchema.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
@@ -77,11 +78,30 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 		}
 	}
 
+	//checks to see if column event existed to begin with
 	if i == -1 {
 		return errors.New("Column cannot be removed if it does not exist")
 	}
 
 	e.ColumnSchema.Columns = append(e.ColumnSchema.Columns[:i], e.ColumnSchema.Columns[i+1:]...)
+	return nil
+}
+
+func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
+	//finds index in list which corresponds to column that needs to be updated
+	i := -1
+	for index, column := range e.ColumnSchema.Columns {
+		if column.OutboundName == ColumnOperation.OutboundName {
+			i = index
+			break
+		}
+	}
+
+	//checks to see if column event existed to begin with
+	if i == -1 {
+		return errors.New("Column cannot be removed if it does not exist")
+	}
+
 	return nil
 }
 
