@@ -68,6 +68,23 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 	return nil
 }
 
+func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
+	i := -1
+	for index, column := range e.ColumnSchema.Columns {
+		if column.OutboundName == ColumnOperation.OutboundName {
+			i = index
+			break
+		}
+	}
+
+	if i == -1 {
+		return errors.New("Column cannot be removed if it does not exist")
+	}
+
+	e.ColumnSchema.Columns = append(e.ColumnSchema.Columns[:i], e.ColumnSchema.Columns[i+1:]...)
+	return nil
+}
+
 type HashSet map[string]HashMember
 
 type HashMember struct{}
