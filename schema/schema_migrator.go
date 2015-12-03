@@ -98,6 +98,10 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 		}
 	}
 
+	if len(m.possibleMigration.TableOption.DistKey) < 1 {
+		return nil, errors.New("Tableoption must contain at least 1 distkey")
+	}
+	
 	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
 	return m.currentEvent, nil
@@ -132,6 +136,13 @@ func (m *MigratorBackend) updateColumn(ColumnOperation ColumnOperation) error {
 	if ColumnOperation.Operation != "update" {
 		return errors.New("Column Operation is not 'update'")
 	}
+
+	//Check if transformer is valid
+	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
+		return errors.New("Update Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
+	}
+
+	//last check needs to be tableoption check
 
 	return m.currentEvent.UpdateColumn(ColumnOperation)
 }
