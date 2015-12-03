@@ -90,18 +90,27 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 	//finds index in list which corresponds to column that needs to be updated
 	i := -1
+	var outboundHashSet HashSet
+
 	for index, column := range e.ColumnSchema.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
 			i = index
-			break
+		} else {
+			outboundHashSet[column.OutboundName] = HashMember{}
 		}
 	}
 
 	//checks to see if column event existed to begin with
 	if i == -1 {
-		return errors.New("Column cannot be removed if it does not exist")
+		return errors.New("Column cannot be updated if it does not exist")
 	}
 
+	//outbound name change, check for collision,
+	if outboundHashSet.Contains(ColumnOperation.NewColumnDefinition.OutboundName) {
+		return errors.New("New outbound name in update column operation already exists in table")
+	}
+
+	e.ColumnSchema.Columns[i] = ColumnOperation.NewColumnDefinition
 	return nil
 }
 
