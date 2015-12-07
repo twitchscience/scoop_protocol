@@ -41,7 +41,7 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 	//in the process of adding columns, validate add columns as well.
 	for _, ColumnOperation := range m.possibleMigration.ColumnOperations {
 
-		err := m.addColumn(ColumnOperation)
+		err := m.currentEvent.AddColumn(ColumnOperation)
 
 		if err != nil {
 			return nil, errors.New("Adding Table failed: " + err.Error())
@@ -84,11 +84,11 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 
 		switch ColumnOperation.Operation {
 		case "add":
-			err = m.addColumn(ColumnOperation)
+			err = m.currentEvent.AddColumn(ColumnOperation)
 		case "remove":
-			err = m.removeColumn(ColumnOperation)
+			err = m.currentEvent.RemoveColumn(ColumnOperation)
 		case "update":
-			err = m.updateColumn(ColumnOperation)
+			err = m.currentEvent.UpdateColumn(ColumnOperation)
 		default:
 			err = errors.New("Not a valid Column Operation") //in case column operation string is mangled.
 		}
@@ -101,48 +101,8 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 	if len(m.possibleMigration.TableOption.DistKey) < 1 {
 		return nil, errors.New("Tableoption must contain at least 1 distkey")
 	}
-	
+
 	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
 	return m.currentEvent, nil
-}
-
-func (m *MigratorBackend) addColumn(ColumnOperation ColumnOperation) error {
-	// column operation is add
-	if ColumnOperation.Operation != "add" {
-		return errors.New("Column Operation is not 'add'")
-	}
-
-	//contains valid transformer
-	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
-		return errors.New("Add Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
-	}
-
-	// Check for column name collision, and add column, return error if there is one
-	return m.currentEvent.AddColumn(ColumnOperation)
-}
-
-func (m *MigratorBackend) removeColumn(ColumnOperation ColumnOperation) error {
-	//column operation is remove
-	if ColumnOperation.Operation != "remove" {
-		return errors.New("Column Operation is not 'remove'")
-	}
-
-	return m.currentEvent.RemoveColumn(ColumnOperation)
-}
-
-func (m *MigratorBackend) updateColumn(ColumnOperation ColumnOperation) error {
-	//column operation is update
-	if ColumnOperation.Operation != "update" {
-		return errors.New("Column Operation is not 'update'")
-	}
-
-	//Check if transformer is valid
-	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
-		return errors.New("Update Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
-	}
-
-	//last check needs to be tableoption check
-
-	return m.currentEvent.UpdateColumn(ColumnOperation)
 }

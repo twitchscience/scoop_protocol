@@ -33,9 +33,9 @@ func buildColumnDefinitionBatch(num int, inboundName, outboundName, transformer,
 	}
 }
 
-func buildColumns(num int, inboundName, outboundName, transformer, columnCreationOptions string) []ColumnDefinition {
+func buildColumns(start, end int, inboundName, outboundName, transformer, columnCreationOptions string) []ColumnDefinition {
 	var columns []ColumnDefinition
-	for i := 0; i < num; i++ {
+	for i := start; i < end; i++ {
 		columns = append(columns, buildColumnDefinitionBatch(i, inboundName, outboundName, transformer, columnCreationOptions))
 	}
 	return columns
@@ -55,9 +55,9 @@ func buildColumnOperationBatch(num int, operation, inboundNameKey, outboundNameK
 	}
 }
 
-func buildColumnOperations(num int, operation, inboundNameKey, outboundNameKey, inboundName, outboundName, transformer, columnCreationOptions string) []ColumnOperation {
+func buildColumnOperations(start, end int, operation, inboundNameKey, outboundNameKey, inboundName, outboundName, transformer, columnCreationOptions string) []ColumnOperation {
 	var columnOperations []ColumnOperation
-	for i := 0; i < num; i++ {
+	for i := start; i < end; i++ {
 		columnOperations = append(columnOperations, buildColumnOperationBatch(i, operation, inboundNameKey, outboundNameKey, inboundName, outboundName, transformer, columnCreationOptions))
 	}
 	return columnOperations
@@ -93,20 +93,6 @@ func buildMigration(tableOperation, name string, columnOperations []ColumnOperat
 	}
 }
 
-// func TestSimpleConfig(t *testing.T) {
-// 	simpleColumns := buildColumns(5, "simpleIn", "simpleOut", "int", "")
-// 	simpleTableOption := buildTableOption(buildStringList(simpleColumns[0].OutboundName), buildStringList())
-// 	simpleColumnSchema := buildColumnSchema(simpleTableOption, simpleColumns)
-// 	simpleEvent := buildEvent("simple_Table", 1, simpleColumnSchema)
-
-// 	err := nil
-
-// 	if err != nil {
-// 		t.Log("err was incorrect")
-// 		t.Fail()
-// 	}
-// }
-
 func TestAddTable(t *testing.T) {
 	t.Log("Testing Add Table")
 	t.Log("Initializing boilerplate")
@@ -116,11 +102,11 @@ func TestAddTable(t *testing.T) {
 		Version: 1,
 	}
 
-	simpleColumnOperations := buildColumnOperations(3, "add", "simpleColIn", "simpleColOut", "simpleColIn", "simpleColOut", "varchar", "(30)")
+	simpleColumnOperations := buildColumnOperations(0, 3, "add", "simpleColIn", "simpleColOut", "simpleColIn", "simpleColOut", "varchar", "(30)")
 	simpleTableOption := buildTableOption(buildStringList(simpleColumnOperations[0].NewColumnDefinition.OutboundName), buildStringList())
 	simpleMigration := buildMigration("add", "empty", simpleColumnOperations, simpleTableOption)
 
-	simpleColumns := buildColumns(3, "simpleColIn", "simpleColOut", "varchar", "(30)")
+	simpleColumns := buildColumns(0, 3, "simpleColIn", "simpleColOut", "varchar", "(30)")
 	simpleColumnSchema := buildColumnSchema(simpleTableOption, simpleColumns)
 	expectedEvent := buildEvent("empty", 2, simpleColumnSchema, simpleMigration)
 
@@ -193,11 +179,11 @@ func TestRemoveTable(t *testing.T) {
 		Version: 1,
 	}
 
-	simpleColumnOperations := buildColumnOperations(3, "add", "simpleColIn", "simpleColOut", "simpleColIn", "simpleColOut", "varchar", "(30)")
+	simpleColumnOperations := buildColumnOperations(0, 3, "add", "simpleColIn", "simpleColOut", "simpleColIn", "simpleColOut", "varchar", "(30)")
 	simpleTableOption := buildTableOption(buildStringList(simpleColumnOperations[0].NewColumnDefinition.OutboundName), buildStringList())
 	simpleMigration := buildMigration("remove", "testEvent", []ColumnOperation{}, TableOption{})
 
-	simpleColumns := buildColumns(3, "simpleColIn", "simpleColOut", "varchar", "(30)")
+	simpleColumns := buildColumns(0, 3, "simpleColIn", "simpleColOut", "varchar", "(30)")
 	simpleColumnSchema := buildColumnSchema(simpleTableOption, simpleColumns)
 	fullEvent := buildEvent("testEvent", 1, simpleColumnSchema, Migration{})
 	expectedEvent := buildEvent("testEvent", 2, ColumnSchema{}, simpleMigration)
@@ -230,3 +216,80 @@ func TestRemoveTable(t *testing.T) {
 
 	t.Log("Test Remove Table Complete")
 }
+
+// func TestUpdateTable(t *testing.T) {
+// 	t.Log("Testing Update Table")
+// 	t.Log("Initializing boilerplate")
+
+// 	emptyEvent := Event{
+// 		Name:    "empty",
+// 		Version: 1,
+// 	}
+
+// 	simpleColumnOperations := buildColumnOperations(0, 3, "add", "simpleColIn", "simpleColOut", "simpleColIn", "simpleColOut", "varchar", "(30)")
+// 	simpleTableOption := buildTableOption(buildStringList(simpleColumnOperations[0].NewColumnDefinition.OutboundName), buildStringList())
+// 	simpleMigration := buildMigration("update", "empty", simpleColumnOperations, simpleTableOption)
+
+// 	simpleColumns := buildColumns(0, 3, "simpleColIn", "simpleColOut", "varchar", "(30)")
+// 	simpleColumnSchema := buildColumnSchema(simpleTableOption, simpleColumns)
+// 	expectedEvent := buildEvent("empty", 2, simpleColumnSchema, simpleMigration)
+
+// 	t.Log("Starting Generic Test that should Migrate successfuly")
+// 	migrator := BuildMigratorBackend(simpleMigration, emptyEvent)
+// 	newEvent, err := migrator.ApplyMigration()
+// 	if err != nil {
+// 		t.Log(err.Error())
+// 		t.Log("err was incorrect, should have passed")
+// 		t.Fail()
+// 	} else if !reflect.DeepEqual(expectedEvent, *newEvent) {
+// 		t.Log("Migration successful, but unexpected 'newEvent'")
+// 		t.Logf("%+v", expectedEvent)
+// 		t.Logf("%+v", newEvent)
+// 		t.Fail()
+// 	} else {
+// 		t.Log("Generic Test Passed")
+// 	}
+
+// 	//Test if table already exists.
+// 	t.Log("Testing 'Table already exists' check")
+// 	migrator = BuildMigratorBackend(simpleMigration, expectedEvent)
+// 	newEvent, err = migrator.ApplyMigration()
+// 	t.Log(err.Error())
+// 	if err == nil {
+// 		t.Log("Err should not be nil: should have failed because table already exists.")
+// 		t.Logf("%+v", *newEvent)
+// 		t.Fail()
+// 	} else {
+// 		t.Log("Test Successful")
+// 	}
+
+// 	t.Log("Testing 'DistKey list empty' Check")
+// 	failMigration := simpleMigration
+// 	failMigration.TableOption.DistKey = []string{}
+// 	migrator = BuildMigratorBackend(failMigration, emptyEvent)
+// 	newEvent, err = migrator.ApplyMigration()
+// 	t.Log(err.Error())
+// 	if err == nil {
+// 		t.Log("Err should not be nil: should have failed because there is not atleast 1 Distkey.")
+// 		t.Logf("%+v", *newEvent)
+// 		t.Fail()
+// 	} else {
+// 		t.Log("Test Successful")
+// 	}
+
+// 	t.Log("Testing Add column 'add' Check")
+// 	failMigration = simpleMigration
+// 	failMigration.ColumnOperations[0].Operation = "update"
+// 	migrator = BuildMigratorBackend(failMigration, emptyEvent)
+// 	newEvent, err = migrator.ApplyMigration()
+// 	t.Log(err.Error())
+// 	if err == nil {
+// 		t.Log("Err should not be nil: should have failed because first add column operation is not 'add'.")
+// 		t.Logf("%+v", *newEvent)
+// 		t.Fail()
+// 	} else {
+// 		t.Log("Test Successful")
+// 	}
+
+// 	t.Log("Test Add Table Complete")
+// }
