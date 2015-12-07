@@ -59,6 +59,18 @@ func (to *TableOption) IsEmpty() bool {
 }
 
 func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
+
+	// column operation is add
+	if ColumnOperation.Operation != "add" {
+		return errors.New("Column Operation is not 'add'")
+	}
+
+	//contains valid transformer
+	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
+		return errors.New("Add Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
+	}
+
+	// Check for column name collision, and add column, return error if there is one
 	for _, column := range e.ColumnSchema.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
 			return errors.New("Column with same Outbound name already exists in table")
@@ -69,6 +81,11 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 }
 
 func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
+	//column operation is remove
+	if ColumnOperation.Operation != "remove" {
+		return errors.New("Column Operation is not 'remove'")
+	}
+
 	//finds index in list which corresponds to column that needs to be removed
 	i := -1
 	for index, column := range e.ColumnSchema.Columns {
@@ -88,6 +105,16 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 }
 
 func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
+	//column operation is update
+	if ColumnOperation.Operation != "update" {
+		return errors.New("Column Operation is not 'update'")
+	}
+
+	//Check if transformer is valid
+	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
+		return errors.New("Update Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
+	}
+
 	//finds index in list which corresponds to column that needs to be updated
 	i := -1
 	var outboundHashSet HashSet
