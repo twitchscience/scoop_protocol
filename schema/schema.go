@@ -1,21 +1,23 @@
 package schema
 
-import "errors"
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 type Migrator interface {
 	Validate() (*Event, error)
 }
 
 type Event struct {
-	Name            string
+	EventName       string
 	Version         int
-	ColumnSchema    ColumnSchema
+	Columns         []ColumnDefinition
 	ParentMigration Migration
-}
-
-type ColumnSchema struct {
-	TableOption TableOption
-	Columns     []ColumnDefinition
+	TableOption     TableOption
 }
 
 type ColumnDefinition struct {
@@ -44,7 +46,14 @@ type TableOption struct {
 	SortKey []string
 }
 
-func (s *ColumnSchema) IsEmpty() bool {
+func MakeNewEvent(eventName string, eventVersion int) Event {
+	return Event{
+		EventName: eventName,
+		Version:   eventVersion,
+	}
+}
+
+func (s *Event) IsEmpty() bool {
 	if len(s.Columns) == 0 {
 		return true
 	}
@@ -66,17 +75,33 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 	}
 
 	//contains valid transformer
-	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
+	if !TransformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
 		return errors.New("Add Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
 	}
 
+	//checks if varchar byte limit is exceeded
+	if ColumnOperation.NewColumnDefinition.Transformer == "varchar" {
+		temp := ColumnOperation.NewColumnDefinition.ColumnCreationOptions
+		varcharLen, err := strconv.Atoi(string(temp[1 : len(temp)-1]))
+		if err != nil {
+			return errors.New("Column creation options does not contain a number")
+		}
+		if varcharLen > 65535 {
+			return errors.New("max size of varchar is 65535 (64k-1)")
+		}
+	}
+
+	if !IsValidIdentifier(ColumnOperation.OutboundName) {
+		return errors.New(fmt.Sprintf("%s is not a valid identifier for a column outbound name", ColumnOperation.OutboundName))
+	}
+
 	// Check for column name collision, and add column, return error if there is one
-	for _, column := range e.ColumnSchema.Columns {
+	for _, column := range e.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
 			return errors.New("Column with same Outbound name already exists in table")
 		}
 	}
-	e.ColumnSchema.Columns = append(e.ColumnSchema.Columns, ColumnOperation.NewColumnDefinition)
+	e.Columns = append(e.Columns, ColumnOperation.NewColumnDefinition)
 	return nil
 }
 
@@ -88,7 +113,7 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 
 	//finds index in list which corresponds to column that needs to be removed
 	i := -1
-	for index, column := range e.ColumnSchema.Columns {
+	for index, column := range e.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
 			i = index
 			break
@@ -100,7 +125,13 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 		return errors.New("Column cannot be removed if it does not exist")
 	}
 
-	e.ColumnSchema.Columns = append(e.ColumnSchema.Columns[:i], e.ColumnSchema.Columns[i+1:]...)
+	for _, key := range e.TableOption.DistKey {
+		if key == ColumnOperation.OutboundName {
+			return errors.New("Cannot remove columns that are the DistKey")
+		}
+	}
+
+	e.Columns = append(e.Columns[:i], e.Columns[i+1:]...)
 	return nil
 }
 
@@ -111,15 +142,37 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 	}
 
 	//Check if transformer is valid
-	if !transformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
+	if !TransformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
 		return errors.New("Update Column operation transformer is invalid: " + ColumnOperation.NewColumnDefinition.Transformer)
+	}
+
+	//checks if varchar byte limit is exceeded
+	if ColumnOperation.NewColumnDefinition.Transformer == "varchar" {
+		temp := ColumnOperation.NewColumnDefinition.ColumnCreationOptions
+		varcharLen, err := strconv.Atoi(string(temp[1 : len(temp)-1]))
+		if err != nil {
+			return errors.New("Column creation options does not contain a number")
+		}
+		if varcharLen > 65535 {
+			return errors.New("max size of varchar is 65535 (64k-1)")
+		}
+	}
+
+	if !IsValidIdentifier(ColumnOperation.NewColumnDefinition.OutboundName) {
+		return errors.New(fmt.Sprintf("%s is not a valid identifier for a column outbound name", ColumnOperation.OutboundName))
+	}
+
+	for _, key := range e.TableOption.DistKey {
+		if key == ColumnOperation.OutboundName {
+			return errors.New("Cannot update columns that are the DistKey")
+		}
 	}
 
 	//finds index in list which corresponds to column that needs to be updated
 	i := -1
-	var outboundHashSet HashSet
+	outboundHashSet := make(HashSet)
 
-	for index, column := range e.ColumnSchema.Columns {
+	for index, column := range e.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
 			i = index
 		} else {
@@ -132,12 +185,12 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 		return errors.New("Column cannot be updated if it does not exist")
 	}
 
-	//outbound name change, check for collision,
+	//outbound name change, check for collision for column rename reasons.
 	if outboundHashSet.Contains(ColumnOperation.NewColumnDefinition.OutboundName) {
 		return errors.New("New outbound name in update column operation already exists in table")
 	}
 
-	e.ColumnSchema.Columns[i] = ColumnOperation.NewColumnDefinition
+	e.Columns[i] = ColumnOperation.NewColumnDefinition
 	return nil
 }
 
@@ -151,7 +204,7 @@ func (hs HashSet) Contains(val string) bool {
 }
 
 //hash member struct
-var transformList = HashSet{
+var TransformList = HashSet{
 	"bigint":             HashMember{},
 	"float":              HashMember{},
 	"varchar":            HashMember{},
@@ -164,4 +217,48 @@ var transformList = HashSet{
 	"ipAsn":              HashMember{},
 	"stringToIntegerMD5": HashMember{},
 	"f@timestamp@unix":   HashMember{},
+}
+
+func IsStandardIdentifier(identifier string) bool {
+	validChar := func(r rune) bool {
+		return !((r > 'A' && r < 'Z') || (r > 'a' && r < 'z') || (r > '0' && r < '9') || r == '$' || r == '_' || r == '-')
+	}
+
+	validFirstChar := func(r rune) bool {
+		return !((r > 'A' && r < 'Z') || (r > 'a' && r < 'z') || r == '_' || r == '-')
+	}
+
+	if len(identifier) > 127 || len(identifier) < 1 {
+		return false
+	}
+
+	if strings.IndexFunc(identifier, validChar) != -1 {
+		return false
+	}
+
+	if strings.IndexFunc(string(identifier[0]), validFirstChar) != -1 {
+		return false
+	}
+
+	return true
+}
+
+func IsValidIdentifier(identifier string) bool {
+	if len(identifier) > 127 || len(identifier) < 1 {
+		return false
+	}
+
+	if bytes.Index([]byte(identifier), []byte("\x00")) != -1 {
+		return false
+	}
+
+	return true
+}
+
+func (m *Migration) CreateOutboundColsHashSet() HashSet {
+	outboundColNames := make(HashSet)
+	for _, operation := range m.ColumnOperations {
+		outboundColNames[operation.OutboundName] = HashMember{}
+	}
+	return outboundColNames
 }
