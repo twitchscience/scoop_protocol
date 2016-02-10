@@ -8,6 +8,7 @@ func EventTest1() s.Event {
 		Version:   1,
 		TableOption: s.TableOption{
 			DistKey: []string{"test_event_1_outbound_col_1"},
+			SortKey: []string{},
 		},
 		Columns: []s.ColumnDefinition{
 			s.ColumnDefinition{
@@ -59,6 +60,7 @@ func Migration1OnEvent1() s.Migration {
 		Name:           "test_event_1",
 		TableOption: s.TableOption{
 			DistKey: []string{"test_event_1_new_outbound_col_1"},
+			SortKey: []string{},
 		},
 		ColumnOperations: []s.ColumnOperation{
 			s.ColumnOperation{
@@ -125,6 +127,7 @@ func Migration3OnEvent1() s.Migration {
 			Name:           "test_event_1",
 			TableOption: s.TableOption{
 				DistKey: []string{"test_event_1_outbound_col_1"},
+				SortKey: []string{},
 			},
 			ColumnOperations: []s.ColumnOperation{
 				s.ColumnOperation{
@@ -158,4 +161,68 @@ func Migration3OnEvent1() s.Migration {
 			},
 		}
 	}
+}
+
+func SimEvent1Version1() s.Event {
+	return s.Event{}
+}
+func SimEvent1Migration1() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent1Version2() s.Event {
+	return s.Event{}
+}
+func SimEvent1Migration2() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent1Version3() s.Event {
+	return s.Event{}
+}
+func SimEvent1Migration3() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent1Version4() s.Event {
+	return s.Event{}
+}
+func SimEvent1Migration4() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent1Version5() s.Event {
+	return s.Event{}
+}
+
+func SimEvent2Version1() s.Event {
+	return s.Event{}
+}
+func SimEvent2Migration1() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent2Version2() s.Event {
+	return s.Event{}
+}
+func SimEvent2Migration2() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent2Version3() s.Event {
+	return s.Event{}
+}
+func SimEvent2Migration3() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent2Version4() s.Event {
+	return s.Event{}
+}
+func SimEvent2Migration4() s.Migration {
+	return s.Migration{}
+}
+
+func SimEvent2Version5() s.Event {
+	return s.Event{}
 }
