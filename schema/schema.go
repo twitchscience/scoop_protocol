@@ -203,6 +203,10 @@ func (hs HashSet) Contains(val string) bool {
 	return ok
 }
 
+func (hs HashSet) Delete(val string) {
+	delete(hs, val)
+}
+
 //hash member struct
 var TransformList = HashSet{
 	"bigint":             HashMember{},
