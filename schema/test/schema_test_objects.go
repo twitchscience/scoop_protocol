@@ -192,7 +192,89 @@ func SimEvent1Migration4() s.Migration {
 }
 
 func SimEvent1Version5() s.Event {
-	return s.Event{}
+	return s.Event{
+		EventName: "chat_ignore_client",
+		Version:   5,
+		TableOption: s.TableOption{
+			DistKey: []string{"device_id"},
+			SortKey: []string{},
+		},
+		Columns: []s.ColumnDefinition{
+			s.ColumnDefinition{
+				Transformer:           "f@timestamp@unix",
+				InboundName:           "time",
+				OutboundName:          "time",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "ip",
+				OutboundName:          "ip",
+				ColumnCreationOptions: "(15)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCity",
+				InboundName:           "ip",
+				OutboundName:          "city",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCountry",
+				InboundName:           "ip",
+				OutboundName:          "country",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipRegion",
+				InboundName:           "ip",
+				OutboundName:          "region",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipAsnInteger",
+				InboundName:           "ip",
+				OutboundName:          "asn_id",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "device_id",
+				OutboundName:          "device_id",
+				ColumnCreationOptions: "(32)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "ui_context",
+				OutboundName:          "ui_context",
+				ColumnCreationOptions: "(25)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "from_login",
+				OutboundName:          "from_login",
+				ColumnCreationOptions: "(25)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "ignored_login",
+				OutboundName:          "ignored_login",
+				ColumnCreationOptions: "(25)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "reason",
+				OutboundName:          "reason",
+				ColumnCreationOptions: "(32)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "platform",
+				OutboundName:          "platform",
+				ColumnCreationOptions: "(32)",
+			},
+		},
+		ParentMigration: s.Migration{},
+	}
 }
 
 func SimEvent2Version1() s.Event {
@@ -203,26 +285,199 @@ func SimEvent2Migration1() s.Migration {
 }
 
 func SimEvent2Version2() s.Event {
-	return s.Event{}
+	return s.Event{
+		EventName: "login_success",
+		Version:   3,
+		TableOption: s.TableOption{
+			DistKey: []string{"device_id"},
+			SortKey: []string{},
+		},
+		Columns: []s.ColumnDefinition{
+			s.ColumnDefinition{
+				Transformer:           "f@timestamp@unix",
+				InboundName:           "time",
+				OutboundName:          "time",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "ip",
+				OutboundName:          "ip",
+				ColumnCreationOptions: "(15)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCity",
+				InboundName:           "ip",
+				OutboundName:          "city",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCountry",
+				InboundName:           "ip",
+				OutboundName:          "country",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipRegion",
+				InboundName:           "ip",
+				OutboundName:          "region",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipAsnInteger",
+				InboundName:           "ip",
+				OutboundName:          "asn_id",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "device_id",
+				OutboundName:          "device_id",
+				ColumnCreationOptions: "(32)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "login",
+				OutboundName:          "login",
+				ColumnCreationOptions: "(16)",
+			},
+		},
+		ParentMigration: s.Migration{},
+	}
 }
 func SimEvent2Migration2() s.Migration {
 	return s.Migration{}
 }
 
 func SimEvent2Version3() s.Event {
-	return s.Event{}
+	return s.Event{
+		EventName: "login_success",
+		Version:   3,
+		TableOption: s.TableOption{
+			DistKey: []string{"device_id"},
+			SortKey: []string{},
+		},
+		Columns: []s.ColumnDefinition{
+			s.ColumnDefinition{
+				Transformer:           "f@timestamp@unix",
+				InboundName:           "time",
+				OutboundName:          "time",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "ip",
+				OutboundName:          "ip",
+				ColumnCreationOptions: "(15)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCity",
+				InboundName:           "ip",
+				OutboundName:          "city",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCountry",
+				InboundName:           "ip",
+				OutboundName:          "country",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipRegion",
+				InboundName:           "ip",
+				OutboundName:          "region",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipAsnInteger",
+				InboundName:           "ip",
+				OutboundName:          "asn_id",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "device_id",
+				OutboundName:          "device_id",
+				ColumnCreationOptions: "(32)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "login",
+				OutboundName:          "login",
+				ColumnCreationOptions: "(25)",
+			},
+		},
+		ParentMigration: s.Migration{},
+	}
 }
 func SimEvent2Migration3() s.Migration {
 	return s.Migration{}
 }
 
 func SimEvent2Version4() s.Event {
-	return s.Event{}
-}
-func SimEvent2Migration4() s.Migration {
-	return s.Migration{}
-}
-
-func SimEvent2Version5() s.Event {
-	return s.Event{}
+	return s.Event{
+		EventName: "login_success",
+		Version:   4,
+		TableOption: s.TableOption{
+			DistKey: []string{"device_id"},
+			SortKey: []string{},
+		},
+		Columns: []s.ColumnDefinition{
+			s.ColumnDefinition{
+				Transformer:           "f@timestamp@unix",
+				InboundName:           "time",
+				OutboundName:          "time",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "ip",
+				OutboundName:          "ip",
+				ColumnCreationOptions: "(15)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCity",
+				InboundName:           "ip",
+				OutboundName:          "city",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipCountry",
+				InboundName:           "ip",
+				OutboundName:          "country",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipRegion",
+				InboundName:           "ip",
+				OutboundName:          "region",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "ipAsnInteger",
+				InboundName:           "ip",
+				OutboundName:          "asn_id",
+				ColumnCreationOptions: "",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "device_id",
+				OutboundName:          "device_id",
+				ColumnCreationOptions: "(32)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "varchar",
+				InboundName:           "login",
+				OutboundName:          "login",
+				ColumnCreationOptions: "(25)",
+			},
+			s.ColumnDefinition{
+				Transformer:           "bool",
+				InboundName:           "two_factor_enabled",
+				OutboundName:          "two_factor_enabled",
+				ColumnCreationOptions: "",
+			},
+		},
+		ParentMigration: s.Migration{},
+	}
 }
