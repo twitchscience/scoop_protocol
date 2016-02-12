@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	s "github.com/twitchscience/scoop_protocol/schema"
@@ -18,6 +19,21 @@ func TestAddTable(t *testing.T) {
 	AddTableAddColumnColumnNameLen(t)
 	AddTableAddColumnColumnsMoreThan300(t)
 	//test working schema here
+
+	t.Logf("Testing working Add Table now")
+	testEvent := SimEvent1Version1()
+	testMigration := SimEvent1Migration1()
+	migrator := s.BuildMigratorBackend(testMigration, testEvent)
+	newEvent, err := migrator.ApplyMigration()
+	if err != nil {
+		t.Errorf("Expected passed migration, instead errored: %s", err)
+	} else {
+		t.Logf("Passed migration successfully: %+v", *newEvent)
+	}
+
+	if !reflect.DeepEqual(*newEvent, SimEvent1Version2()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version2(), *newEvent)
+	}
 }
 
 func AddTableIsColumnSchemaEmpty(t *testing.T) {
@@ -288,7 +304,6 @@ func RemoveTableIsColumnSchemaFull(t *testing.T) {
 		t.Error("Test should have failed as event is already empty")
 		t.Logf("%+v", newEvent)
 	}
-
 }
 
 func TestUpdateTable(t *testing.T) {
@@ -315,6 +330,49 @@ func TestUpdateTable(t *testing.T) {
 	UpdateTableRemoveColumnDoesNotExist(t)
 	UpdateTableRemoveColumnIsDistKey(t)
 	//test working schema here
+
+	t.Logf("Testing working update Table now")
+	testEvent := SimEvent1Version2()
+	testMigration := SimEvent1Migration2()
+	migrator := s.BuildMigratorBackend(testMigration, testEvent)
+	newEvent, err := migrator.ApplyMigration()
+	if err != nil {
+		t.Errorf("Expected passed migration, instead errored: %s", err)
+	} else {
+		t.Logf("Passed migration successfully: %+v", *newEvent)
+	}
+
+	if !reflect.DeepEqual(*newEvent, SimEvent1Version3()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version3(), *newEvent)
+	}
+
+	testEvent = SimEvent1Version3()
+	testMigration = SimEvent1Migration3()
+	migrator = s.BuildMigratorBackend(testMigration, testEvent)
+	newEvent, err = migrator.ApplyMigration()
+	if err != nil {
+		t.Errorf("Expected passed migration, instead errored: %s", err)
+	} else {
+		t.Logf("Passed migration successfully: %+v", *newEvent)
+	}
+
+	if !reflect.DeepEqual(*newEvent, SimEvent1Version4()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version4(), *newEvent)
+	}
+
+	testEvent = SimEvent1Version4()
+	testMigration = SimEvent1Migration4()
+	migrator = s.BuildMigratorBackend(testMigration, testEvent)
+	newEvent, err = migrator.ApplyMigration()
+	if err != nil {
+		t.Errorf("Expected passed migration, instead errored: %s", err)
+	} else {
+		t.Logf("Passed migration successfully: %+v", *newEvent)
+	}
+
+	if !reflect.DeepEqual(*newEvent, SimEvent1Version5()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version5(), *newEvent)
+	}
 
 }
 
@@ -361,7 +419,6 @@ func UpdateTableHasValidTableOptions(t *testing.T) {
 		t.Error("Test should have failed as Migration table options did not match event's table options")
 		t.Logf("%+v", newEvent)
 	}
-
 }
 
 func UpdateTableAddColumnNoTransformerJunk(t *testing.T) {
