@@ -89,7 +89,8 @@ func (m *MigratorBackend) removeTable() (*Event, error) {
 		return nil, errors.New("Cannot remove table that is already empty")
 	}
 
-	m.currentEvent.Columns = nil
+	m.currentEvent.Columns = []ColumnDefinition{}
+	m.currentEvent.TableOption = TableOption{}
 
 	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
