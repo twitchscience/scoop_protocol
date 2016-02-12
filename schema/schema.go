@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 )
 
 type Migrator interface {
@@ -91,6 +90,7 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 		}
 	}
 
+	//checks if outbound column name is valid identifier
 	if !IsValidIdentifier(ColumnOperation.OutboundName) {
 		return errors.New(fmt.Sprintf("%s is not a valid identifier for a column outbound name", ColumnOperation.OutboundName))
 	}
@@ -125,6 +125,7 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 		return errors.New("Column cannot be removed if it does not exist")
 	}
 
+	//cannot remove columns that are distkey
 	for _, key := range e.TableOption.DistKey {
 		if key == ColumnOperation.OutboundName {
 			return errors.New("Cannot remove columns that are the DistKey")
@@ -158,10 +159,12 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 		}
 	}
 
+	//checks if outbound col name is valid identifier
 	if !IsValidIdentifier(ColumnOperation.NewColumnDefinition.OutboundName) {
 		return errors.New(fmt.Sprintf("%s is not a valid identifier for a column outbound name", ColumnOperation.OutboundName))
 	}
 
+	//cannot update columns that are distkey
 	for _, key := range e.TableOption.DistKey {
 		if key == ColumnOperation.OutboundName {
 			return errors.New("Cannot update columns that are the DistKey")
@@ -221,30 +224,6 @@ var TransformList = HashSet{
 	"ipAsn":              HashMember{},
 	"stringToIntegerMD5": HashMember{},
 	"f@timestamp@unix":   HashMember{},
-}
-
-func IsStandardIdentifier(identifier string) bool {
-	validChar := func(r rune) bool {
-		return !((r > 'A' && r < 'Z') || (r > 'a' && r < 'z') || (r > '0' && r < '9') || r == '$' || r == '_' || r == '-')
-	}
-
-	validFirstChar := func(r rune) bool {
-		return !((r > 'A' && r < 'Z') || (r > 'a' && r < 'z') || r == '_' || r == '-')
-	}
-
-	if len(identifier) > 127 || len(identifier) < 1 {
-		return false
-	}
-
-	if strings.IndexFunc(identifier, validChar) != -1 {
-		return false
-	}
-
-	if strings.IndexFunc(string(identifier[0]), validFirstChar) != -1 {
-		return false
-	}
-
-	return true
 }
 
 func IsValidIdentifier(identifier string) bool {
