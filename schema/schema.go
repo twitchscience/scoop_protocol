@@ -1,9 +1,14 @@
 package schema
 
 import (
-	"bytes"
 	"strconv"
+	"strings"
 )
+
+const add string = "add"
+const update string = "update"
+const remove string = "remove"
+const maxVarcharLen int = 65535
 
 type Migrator interface {
 	Validate() (*Event, error)
@@ -43,7 +48,7 @@ type TableOption struct {
 	SortKey []string
 }
 
-func MakeNewEvent(eventName string, eventVersion int) Event {
+func NewEvent(eventName string, eventVersion int) Event {
 	return Event{
 		EventName: eventName,
 		Version:   eventVersion,
@@ -65,9 +70,7 @@ func (to *TableOption) IsEmpty() bool {
 }
 
 func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
-
-	// column operation is add
-	if ColumnOperation.Operation != "add" {
+	if ColumnOperation.Operation != add {
 		return &ColumnError{ErrColumnOpNotAdd}
 	}
 
@@ -83,7 +86,7 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 		if err != nil {
 			return &ColumnError{ErrVarCharNotInt}
 		}
-		if varcharLen > 65535 {
+		if varcharLen > maxVarcharLen {
 			return &ColumnError{ErrVarCharBytesMax}
 		}
 	}
@@ -105,7 +108,7 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 
 func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 	//column operation is remove
-	if ColumnOperation.Operation != "remove" {
+	if ColumnOperation.Operation != remove {
 		return &ColumnError{ErrColumnOpNotRemove}
 	}
 
@@ -136,7 +139,7 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 
 func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 	//column operation is update
-	if ColumnOperation.Operation != "update" {
+	if ColumnOperation.Operation != update {
 		return &ColumnError{ErrColumnOpNotUpdate}
 	}
 
@@ -152,7 +155,7 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 		if err != nil {
 			return &ColumnError{ErrVarCharNotInt}
 		}
-		if varcharLen > 65535 {
+		if varcharLen > maxVarcharLen {
 			return &ColumnError{ErrVarCharBytesMax}
 		}
 	}
@@ -171,24 +174,20 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 
 	//finds index in list which corresponds to column that needs to be updated
 	i := -1
-	outboundHashSet := make(HashSet)
 
 	for index, column := range e.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
 			i = index
 		} else {
-			outboundHashSet[column.OutboundName] = HashMember{}
+			if column.OutboundName == ColumnOperation.NewColumnDefinition.OutboundName {
+				return &ColumnError{ErrOutboundNameCollision}
+			}
 		}
 	}
 
 	//checks to see if column event existed to begin with
 	if i == -1 {
 		return &ColumnError{ErrUpdateColNonExistingCol}
-	}
-
-	//outbound name change, check for collision for column rename reasons.
-	if outboundHashSet.Contains(ColumnOperation.NewColumnDefinition.OutboundName) {
-		return &ColumnError{ErrOutboundNameCollision}
 	}
 
 	e.Columns[i] = ColumnOperation.NewColumnDefinition
@@ -229,7 +228,7 @@ func IsValidIdentifier(identifier string) bool {
 		return false
 	}
 
-	if bytes.Index([]byte(identifier), []byte("\x00")) != -1 {
+	if strings.ContainsAny(identifier, "\x00") {
 		return false
 	}
 

@@ -10,7 +10,7 @@ type MigratorBackend struct {
 	currentEvent      *Event
 }
 
-func BuildMigratorBackend(newMigration Migration, currentEvent Event) MigratorBackend {
+func NewMigratorBackend(newMigration Migration, currentEvent Event) MigratorBackend {
 	return MigratorBackend{
 		possibleMigration: &newMigration,
 		currentEvent:      &currentEvent,
@@ -20,11 +20,11 @@ func BuildMigratorBackend(newMigration Migration, currentEvent Event) MigratorBa
 func (m *MigratorBackend) ApplyMigration() (*Event, error) {
 
 	switch m.possibleMigration.TableOperation {
-	case "add":
+	case add:
 		return m.addTable()
-	case "remove":
+	case remove:
 		return m.removeTable()
-	case "update":
+	case update:
 		return m.updateTable()
 	default:
 		return nil, &TableError{ErrInvalidTableOperation}
@@ -111,11 +111,11 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 		var err error
 
 		switch ColumnOperation.Operation {
-		case "add":
+		case add:
 			err = m.currentEvent.AddColumn(ColumnOperation)
-		case "remove":
+		case remove:
 			err = m.currentEvent.RemoveColumn(ColumnOperation)
-		case "update":
+		case update:
 			err = m.currentEvent.UpdateColumn(ColumnOperation)
 		default:
 			err = &TableError{ErrInvalidColumnOperation} //in case column operation string is mangled.
