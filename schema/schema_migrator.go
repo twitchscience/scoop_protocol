@@ -49,7 +49,6 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 	}
 
 	//checks if distkey and sortkey are actually in the columns
-
 	outboundCols := m.possibleMigration.NewOutboundColsHashSet()
 	for _, distKey := range m.possibleMigration.TableOption.DistKey {
 		if !outboundCols.Contains(distKey) {
