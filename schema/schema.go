@@ -86,7 +86,7 @@ func (e *Event) addColumn(ColumnOperation ColumnOperation) error {
 	//checks if varchar byte limit is exceeded
 	if ColumnOperation.NewColumnDefinition.Transformer == "varchar" {
 		temp := ColumnOperation.NewColumnDefinition.ColumnCreationOptions
-		varcharLen, err := strconv.Atoi(string(temp[1 : len(temp)-1]))
+		varcharLen, err := strconv.Atoi(temp[1 : len(temp)-1])
 		if err != nil {
 			return ErrVarCharNotInt
 		}
@@ -155,7 +155,7 @@ func (e *Event) updateColumn(ColumnOperation ColumnOperation) error {
 	//checks if varchar byte limit is exceeded
 	if ColumnOperation.NewColumnDefinition.Transformer == "varchar" {
 		temp := ColumnOperation.NewColumnDefinition.ColumnCreationOptions
-		varcharLen, err := strconv.Atoi(string(temp[1 : len(temp)-1]))
+		varcharLen, err := strconv.Atoi(temp[1 : len(temp)-1])
 		if err != nil {
 			return ErrVarCharNotInt
 		}
