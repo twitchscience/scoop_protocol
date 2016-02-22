@@ -11,10 +11,12 @@ const update string = "update"
 const remove string = "remove"
 const maxVarcharLen int = 65535
 
+//Migrator interface that abstracts the migration method
 type Migrator interface {
-	Validate() (*Event, error)
+	ApplyMigration() (*Event, error)
 }
 
+//Event stores all the relevant data in event
 type Event struct {
 	EventName       string
 	Version         int
@@ -23,6 +25,7 @@ type Event struct {
 	TableOption     TableOption
 }
 
+//ColumnDefinition stores all the relevant data for a single column definition
 type ColumnDefinition struct {
 	InboundName           string
 	OutboundName          string
@@ -30,6 +33,7 @@ type ColumnDefinition struct {
 	ColumnCreationOptions string
 }
 
+//Migration stores all the relevant data for a migration
 type Migration struct {
 	TableOperation   string
 	Name             string
@@ -37,6 +41,7 @@ type Migration struct {
 	TableOption      TableOption
 }
 
+//ColumnOperation stores all the relevant data for a single column operation
 type ColumnOperation struct {
 	Operation           string
 	InboundName         string
@@ -44,11 +49,13 @@ type ColumnOperation struct {
 	NewColumnDefinition ColumnDefinition
 }
 
+//TableOption stores all the relevant data for the options a table may store
 type TableOption struct {
 	DistKey []string
 	SortKey []string
 }
 
+//NewEvent returns an empty event with specified eventName and eventVersion
 func NewEvent(eventName string, eventVersion int) Event {
 	return Event{
 		EventName: eventName,
@@ -56,15 +63,17 @@ func NewEvent(eventName string, eventVersion int) Event {
 	}
 }
 
-func (s *Event) IsEmpty() bool {
-	return len(s.Columns) == 0
+//IsEmpty returns (t/f) whether or not if the Event is empty or not
+func (e *Event) IsEmpty() bool {
+	return len(e.Columns) == 0
 }
 
+//IsEmpty returns (t/f) whether or not if the Tableoption is empty or not
 func (to *TableOption) IsEmpty() bool {
 	return len(to.DistKey) == 0 && len(to.SortKey) == 0
 }
 
-func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
+func (e *Event) addColumn(ColumnOperation ColumnOperation) error {
 	if ColumnOperation.Operation != add {
 		return ErrColumnOpNotAdd
 	}
@@ -101,7 +110,7 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 	return nil
 }
 
-func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
+func (e *Event) removeColumn(ColumnOperation ColumnOperation) error {
 	//column operation is remove
 	if ColumnOperation.Operation != remove {
 		return ErrColumnOpNotRemove
@@ -132,7 +141,7 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 	return nil
 }
 
-func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
+func (e *Event) updateColumn(ColumnOperation ColumnOperation) error {
 	//column operation is update
 	if ColumnOperation.Operation != update {
 		return ErrColumnOpNotUpdate
@@ -189,20 +198,24 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 	return nil
 }
 
+//HashSet is a map struct designed to be used as a set
 type HashSet map[string]HashMember
 
+//HashMember is an empty struct used as values in HashSet
 type HashMember struct{}
 
+//Contains determins if val is in the corresponding HashSet
 func (hs HashSet) Contains(val string) bool {
 	_, ok := hs[val]
 	return ok
 }
 
+//Delete deletes the corresponding item from the hashset if it exists.
 func (hs HashSet) Delete(val string) {
 	delete(hs, val)
 }
 
-//hash member struct
+//TransformList contains all the correct transformer items in a HashSet
 var TransformList = HashSet{
 	"bigint":             HashMember{},
 	"float":              HashMember{},
@@ -218,6 +231,7 @@ var TransformList = HashSet{
 	"f@timestamp@unix":   HashMember{},
 }
 
+//IsValidIdentifier determines if a given identifier is valid in redshift
 func IsValidIdentifier(identifier string) bool {
 	if len(identifier) > 127 || len(identifier) < 1 {
 		return false
@@ -230,7 +244,8 @@ func IsValidIdentifier(identifier string) bool {
 	return true
 }
 
-func (m *Migration) CreateOutboundColsHashSet() HashSet {
+//NewOutboundColsHashSet creates a hashset of the outbound columns in a migration for quickly checking inclusion of distkeys and sortkeys
+func (m *Migration) NewOutboundColsHashSet() HashSet {
 	outboundColNames := make(HashSet)
 	for _, operation := range m.ColumnOperations {
 		outboundColNames[operation.OutboundName] = HashMember{}

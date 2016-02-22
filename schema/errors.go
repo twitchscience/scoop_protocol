@@ -2,6 +2,7 @@ package schema
 
 import "errors"
 
+//errors that can be recognized for testing
 var (
 	ErrInvalidTableOperation         = errors.New("Not one of the valid table operations (add, remove, update)")
 	ErrInvalidColumnOperation        = errors.New("Not one of the valid column operations (add, remove, update)")

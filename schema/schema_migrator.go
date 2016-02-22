@@ -6,11 +6,13 @@ import (
 	"reflect"
 )
 
+//MigratorBackend stores the migration and event objects for a migration
 type MigratorBackend struct {
 	possibleMigration *Migration
 	currentEvent      *Event
 }
 
+//NewMigratorBackend is the constructor for applying a new migration
 func NewMigratorBackend(newMigration Migration, currentEvent Event) MigratorBackend {
 	return MigratorBackend{
 		possibleMigration: &newMigration,
@@ -18,6 +20,7 @@ func NewMigratorBackend(newMigration Migration, currentEvent Event) MigratorBack
 	}
 }
 
+//ApplyMigration calls the necessary functions to apply a migration to an event, or error
 func (m *MigratorBackend) ApplyMigration() (*Event, error) {
 	if m.possibleMigration.Name != m.currentEvent.EventName {
 		return nil, ErrMigrationNameDoesNotMatch
@@ -47,7 +50,7 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 
 	//checks if distkey and sortkey are actually in the columns
 
-	outboundCols := m.possibleMigration.CreateOutboundColsHashSet()
+	outboundCols := m.possibleMigration.NewOutboundColsHashSet()
 	for _, distKey := range m.possibleMigration.TableOption.DistKey {
 		if !outboundCols.Contains(distKey) {
 			return nil, ErrDistKeyNotInCols
@@ -60,7 +63,7 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 	}
 
 	if !IsValidIdentifier(m.possibleMigration.Name) {
-		return nil, fmt.Errorf("Invalid identifier for Column Name: %s", m.possibleMigration.Name)
+		return nil, fmt.Errorf("Invalid identifier for Migration Name: %s", m.possibleMigration.Name)
 	}
 
 	if len(m.possibleMigration.ColumnOperations) > 300 {
@@ -70,7 +73,7 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 	//in the process of adding columns, validate add columns as well.
 	for _, ColumnOperation := range m.possibleMigration.ColumnOperations {
 
-		err := m.currentEvent.AddColumn(ColumnOperation)
+		err := m.currentEvent.addColumn(ColumnOperation)
 
 		if err != nil {
 			return nil, errors.New("Adding Table failed: " + err.Error())
@@ -116,11 +119,11 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 
 		switch ColumnOperation.Operation {
 		case add:
-			err = m.currentEvent.AddColumn(ColumnOperation)
+			err = m.currentEvent.addColumn(ColumnOperation)
 		case remove:
-			err = m.currentEvent.RemoveColumn(ColumnOperation)
+			err = m.currentEvent.removeColumn(ColumnOperation)
 		case update:
-			err = m.currentEvent.UpdateColumn(ColumnOperation)
+			err = m.currentEvent.updateColumn(ColumnOperation)
 		default:
 			err = ErrInvalidColumnOperation //in case column operation string is mangled
 		}
