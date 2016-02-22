@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -56,27 +57,21 @@ func NewEvent(eventName string, eventVersion int) Event {
 }
 
 func (s *Event) IsEmpty() bool {
-	if len(s.Columns) == 0 {
-		return true
-	}
-	return false
+	return len(s.Columns) == 0
 }
 
 func (to *TableOption) IsEmpty() bool {
-	if len(to.DistKey) == 0 && len(to.SortKey) == 0 {
-		return true
-	}
-	return false
+	return len(to.DistKey) == 0 && len(to.SortKey) == 0
 }
 
 func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 	if ColumnOperation.Operation != add {
-		return &ColumnError{ErrColumnOpNotAdd}
+		return ErrColumnOpNotAdd
 	}
 
 	//contains valid transformer
 	if !TransformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
-		return &ColumnError{ErrInvalidTransformer}
+		return ErrInvalidTransformer
 	}
 
 	//checks if varchar byte limit is exceeded
@@ -84,22 +79,22 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 		temp := ColumnOperation.NewColumnDefinition.ColumnCreationOptions
 		varcharLen, err := strconv.Atoi(string(temp[1 : len(temp)-1]))
 		if err != nil {
-			return &ColumnError{ErrVarCharNotInt}
+			return ErrVarCharNotInt
 		}
 		if varcharLen > maxVarcharLen {
-			return &ColumnError{ErrVarCharBytesMax}
+			return ErrVarCharBytesMax
 		}
 	}
 
 	//checks if outbound column name is valid identifier
 	if !IsValidIdentifier(ColumnOperation.OutboundName) {
-		return &ColumnError{ErrInvalidIdentifier}
+		return fmt.Errorf("Invalid identifier for Column Name: %s", ColumnOperation.OutboundName)
 	}
 
 	// Check for column name collision, and add column, return error if there is one
 	for _, column := range e.Columns {
 		if column.OutboundName == ColumnOperation.OutboundName {
-			return &ColumnError{ErrOutboundNameCollision}
+			return ErrOutboundNameCollision
 		}
 	}
 	e.Columns = append(e.Columns, ColumnOperation.NewColumnDefinition)
@@ -109,7 +104,7 @@ func (e *Event) AddColumn(ColumnOperation ColumnOperation) error {
 func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 	//column operation is remove
 	if ColumnOperation.Operation != remove {
-		return &ColumnError{ErrColumnOpNotRemove}
+		return ErrColumnOpNotRemove
 	}
 
 	//finds index in list which corresponds to column that needs to be removed
@@ -123,13 +118,13 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 
 	//checks to see if column event existed to begin with
 	if i == -1 {
-		return &ColumnError{ErrRemoveColNonExistingCol}
+		return ErrRemoveColNonExistingCol
 	}
 
 	//cannot remove columns that are distkey
 	for _, key := range e.TableOption.DistKey {
 		if key == ColumnOperation.OutboundName {
-			return &ColumnError{ErrRemoveColisDistKey}
+			return ErrRemoveColisDistKey
 		}
 	}
 
@@ -140,12 +135,12 @@ func (e *Event) RemoveColumn(ColumnOperation ColumnOperation) error {
 func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 	//column operation is update
 	if ColumnOperation.Operation != update {
-		return &ColumnError{ErrColumnOpNotUpdate}
+		return ErrColumnOpNotUpdate
 	}
 
 	//Check if transformer is valid
 	if !TransformList.Contains(ColumnOperation.NewColumnDefinition.Transformer) {
-		return &ColumnError{ErrInvalidTransformer}
+		return ErrInvalidTransformer
 	}
 
 	//checks if varchar byte limit is exceeded
@@ -153,22 +148,22 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 		temp := ColumnOperation.NewColumnDefinition.ColumnCreationOptions
 		varcharLen, err := strconv.Atoi(string(temp[1 : len(temp)-1]))
 		if err != nil {
-			return &ColumnError{ErrVarCharNotInt}
+			return ErrVarCharNotInt
 		}
 		if varcharLen > maxVarcharLen {
-			return &ColumnError{ErrVarCharBytesMax}
+			return ErrVarCharBytesMax
 		}
 	}
 
 	//checks if outbound col name is valid identifier
 	if !IsValidIdentifier(ColumnOperation.NewColumnDefinition.OutboundName) {
-		return &ColumnError{ErrInvalidIdentifier}
+		return fmt.Errorf("Invalid identifier for Column Name: %s", ColumnOperation.NewColumnDefinition.OutboundName)
 	}
 
 	//cannot update columns that are distkey
 	for _, key := range e.TableOption.DistKey {
 		if key == ColumnOperation.OutboundName {
-			return &ColumnError{ErrUpdateColisDistKey}
+			return ErrUpdateColisDistKey
 		}
 	}
 
@@ -180,14 +175,14 @@ func (e *Event) UpdateColumn(ColumnOperation ColumnOperation) error {
 			i = index
 		} else {
 			if column.OutboundName == ColumnOperation.NewColumnDefinition.OutboundName {
-				return &ColumnError{ErrOutboundNameCollision}
+				return ErrOutboundNameCollision
 			}
 		}
 	}
 
 	//checks to see if column event existed to begin with
 	if i == -1 {
-		return &ColumnError{ErrUpdateColNonExistingCol}
+		return ErrUpdateColNonExistingCol
 	}
 
 	e.Columns[i] = ColumnOperation.NewColumnDefinition

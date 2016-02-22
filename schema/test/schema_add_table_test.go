@@ -108,7 +108,7 @@ func AddTableIsValidEventIdentifier(t *testing.T) {
 	}
 
 	testMigration.Name = "abcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyz"
-	testEvent.EventName = "abcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyzabcdefghijklmnopqrstuvwzyz"
+	testEvent.EventName = testMigration.Name
 	migrator = s.NewMigratorBackend(testMigration, testEvent)
 	newEvent, err = migrator.ApplyMigration()
 	if err == nil {

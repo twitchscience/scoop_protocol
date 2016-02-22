@@ -2,6 +2,7 @@ package schema
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -18,6 +19,9 @@ func NewMigratorBackend(newMigration Migration, currentEvent Event) MigratorBack
 }
 
 func (m *MigratorBackend) ApplyMigration() (*Event, error) {
+	if m.possibleMigration.Name != m.currentEvent.EventName {
+		return nil, ErrMigrationNameDoesNotMatch
+	}
 
 	switch m.possibleMigration.TableOperation {
 	case add:
@@ -27,18 +31,18 @@ func (m *MigratorBackend) ApplyMigration() (*Event, error) {
 	case update:
 		return m.updateTable()
 	default:
-		return nil, &TableError{ErrInvalidTableOperation}
+		return nil, ErrInvalidTableOperation
 	}
 }
 
 func (m *MigratorBackend) addTable() (*Event, error) {
 	//checks to see if table already exists.
 	if !m.currentEvent.IsEmpty() {
-		return nil, &TableError{ErrAddTableOnExistingTable}
+		return nil, ErrAddTableOnExistingTable
 	}
 	//checks for existance of atleast single distKey
 	if len(m.possibleMigration.TableOption.DistKey) < 1 {
-		return nil, &TableError{ErrMustContainDistKey}
+		return nil, ErrMustContainDistKey
 	}
 
 	//checks if distkey and sortkey are actually in the columns
@@ -46,21 +50,21 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 	outboundCols := m.possibleMigration.CreateOutboundColsHashSet()
 	for _, distKey := range m.possibleMigration.TableOption.DistKey {
 		if !outboundCols.Contains(distKey) {
-			return nil, &TableError{ErrDistKeyNotInCols}
+			return nil, ErrDistKeyNotInCols
 		}
 	}
 	for _, sortKey := range m.possibleMigration.TableOption.SortKey {
 		if !outboundCols.Contains(sortKey) {
-			return nil, &TableError{ErrSortKeyNotInCols}
+			return nil, ErrSortKeyNotInCols
 		}
 	}
 
 	if !IsValidIdentifier(m.possibleMigration.Name) {
-		return nil, &TableError{ErrInvalidIdentifier}
+		return nil, fmt.Errorf("Invalid identifier for Column Name: %s", m.possibleMigration.Name)
 	}
 
 	if len(m.possibleMigration.ColumnOperations) > 300 {
-		return nil, &TableError{ErrTooManyColumns}
+		return nil, ErrTooManyColumns
 	}
 
 	//in the process of adding columns, validate add columns as well.
@@ -85,7 +89,7 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 func (m *MigratorBackend) removeTable() (*Event, error) {
 	//checks to see if table is already empty.
 	if m.currentEvent.IsEmpty() {
-		return nil, &TableError{ErrRemoveTableOnNonExistingTable}
+		return nil, ErrRemoveTableOnNonExistingTable
 	}
 
 	m.currentEvent.Columns = []ColumnDefinition{}
@@ -99,11 +103,11 @@ func (m *MigratorBackend) removeTable() (*Event, error) {
 func (m *MigratorBackend) updateTable() (*Event, error) {
 	//checks to see if table is already empty.
 	if m.currentEvent.IsEmpty() {
-		return nil, &TableError{ErrUpdateTableonNonExistingTable}
+		return nil, ErrUpdateTableonNonExistingTable
 	}
 
 	if !reflect.DeepEqual(m.possibleMigration.TableOption, m.currentEvent.TableOption) {
-		return nil, &TableError{ErrDifferentTableOptions}
+		return nil, ErrDifferentTableOptions
 	}
 
 	for _, ColumnOperation := range m.possibleMigration.ColumnOperations {
@@ -118,7 +122,7 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 		case update:
 			err = m.currentEvent.UpdateColumn(ColumnOperation)
 		default:
-			err = &TableError{ErrInvalidColumnOperation} //in case column operation string is mangled.
+			err = ErrInvalidColumnOperation //in case column operation string is mangled
 		}
 
 		if err != nil {
@@ -127,11 +131,11 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 	}
 
 	if len(m.currentEvent.Columns) > 300 {
-		return nil, &TableError{ErrTooManyColumns}
+		return nil, ErrTooManyColumns
 	}
 
 	if len(m.possibleMigration.TableOption.DistKey) < 1 {
-		return nil, &TableError{ErrMustContainDistKey}
+		return nil, ErrMustContainDistKey
 	}
 
 	//table Option check? before or after migration? Still too consider.
