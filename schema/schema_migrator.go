@@ -21,9 +21,9 @@ func NewMigratorBackend(newMigration Migration, currentEvent Event) MigratorBack
 }
 
 //ApplyMigration calls the necessary functions to apply a migration to an event, or error
-func (m *MigratorBackend) ApplyMigration() (*Event, error) {
+func (m *MigratorBackend) ApplyMigration() (Event, error) {
 	if m.possibleMigration.Name != m.currentEvent.EventName {
-		return nil, ErrMigrationNameDoesNotMatch
+		return Event{}, ErrMigrationNameDoesNotMatch
 	}
 
 	switch m.possibleMigration.TableOperation {
@@ -34,39 +34,39 @@ func (m *MigratorBackend) ApplyMigration() (*Event, error) {
 	case update:
 		return m.updateTable()
 	default:
-		return nil, ErrInvalidTableOperation
+		return Event{}, ErrInvalidTableOperation
 	}
 }
 
-func (m *MigratorBackend) addTable() (*Event, error) {
+func (m *MigratorBackend) addTable() (Event, error) {
 	//checks to see if table already exists.
 	if !m.currentEvent.IsEmpty() {
-		return nil, ErrAddTableOnExistingTable
+		return Event{}, ErrAddTableOnExistingTable
 	}
 	//checks for existance of atleast single distKey
 	if len(m.possibleMigration.TableOption.DistKey) < 1 {
-		return nil, ErrMustContainDistKey
+		return Event{}, ErrMustContainDistKey
 	}
 
 	//checks if distkey and sortkey are actually in the columns
 	outboundCols := m.possibleMigration.NewOutboundColsHashSet()
 	for _, distKey := range m.possibleMigration.TableOption.DistKey {
 		if !outboundCols.Contains(distKey) {
-			return nil, ErrDistKeyNotInCols
+			return Event{}, ErrDistKeyNotInCols
 		}
 	}
 	for _, sortKey := range m.possibleMigration.TableOption.SortKey {
 		if !outboundCols.Contains(sortKey) {
-			return nil, ErrSortKeyNotInCols
+			return Event{}, ErrSortKeyNotInCols
 		}
 	}
 
 	if !IsValidIdentifier(m.possibleMigration.Name) {
-		return nil, fmt.Errorf("Invalid identifier for Migration Name: %s", m.possibleMigration.Name)
+		return Event{}, fmt.Errorf("Invalid identifier for Migration Name: %s", m.possibleMigration.Name)
 	}
 
 	if len(m.possibleMigration.ColumnOperations) > 300 {
-		return nil, ErrTooManyColumns
+		return Event{}, ErrTooManyColumns
 	}
 
 	//in the process of adding columns, validate add columns as well.
@@ -75,7 +75,7 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 		err := m.currentEvent.addColumn(ColumnOperation)
 
 		if err != nil {
-			return nil, errors.New("Adding Table failed: " + err.Error())
+			return Event{}, errors.New("Adding Table failed: " + err.Error())
 		}
 	}
 
@@ -85,13 +85,13 @@ func (m *MigratorBackend) addTable() (*Event, error) {
 	//increment version number
 	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
-	return m.currentEvent, nil
+	return *m.currentEvent, nil
 }
 
-func (m *MigratorBackend) removeTable() (*Event, error) {
+func (m *MigratorBackend) removeTable() (Event, error) {
 	//checks to see if table is already empty.
 	if m.currentEvent.IsEmpty() {
-		return nil, ErrRemoveTableOnNonExistingTable
+		return Event{}, ErrRemoveTableOnNonExistingTable
 	}
 
 	m.currentEvent.Columns = []ColumnDefinition{}
@@ -99,17 +99,17 @@ func (m *MigratorBackend) removeTable() (*Event, error) {
 
 	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
-	return m.currentEvent, nil
+	return *m.currentEvent, nil
 }
 
-func (m *MigratorBackend) updateTable() (*Event, error) {
+func (m *MigratorBackend) updateTable() (Event, error) {
 	//checks to see if table is already empty.
 	if m.currentEvent.IsEmpty() {
-		return nil, ErrUpdateTableonNonExistingTable
+		return Event{}, ErrUpdateTableonNonExistingTable
 	}
 
 	if !reflect.DeepEqual(m.possibleMigration.TableOption, m.currentEvent.TableOption) {
-		return nil, ErrDifferentTableOptions
+		return Event{}, ErrDifferentTableOptions
 	}
 
 	for _, ColumnOperation := range m.possibleMigration.ColumnOperations {
@@ -128,21 +128,21 @@ func (m *MigratorBackend) updateTable() (*Event, error) {
 		}
 
 		if err != nil {
-			return nil, errors.New("Updating Table failed: " + err.Error())
+			return Event{}, errors.New("Updating Table failed: " + err.Error())
 		}
 	}
 
 	if len(m.currentEvent.Columns) > 300 {
-		return nil, ErrTooManyColumns
+		return Event{}, ErrTooManyColumns
 	}
 
 	if len(m.possibleMigration.TableOption.DistKey) < 1 {
-		return nil, ErrMustContainDistKey
+		return Event{}, ErrMustContainDistKey
 	}
 
 	//table Option check? before or after migration? Still too consider.
 
 	m.currentEvent.Version++
 	m.currentEvent.ParentMigration = *m.possibleMigration
-	return m.currentEvent, nil
+	return *m.currentEvent, nil
 }

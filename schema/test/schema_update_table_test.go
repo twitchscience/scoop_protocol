@@ -40,11 +40,11 @@ func TestUpdateTable(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected passed migration, instead errored: %s", err)
 	} else {
-		t.Logf("Passed migration successfully: %+v", *newEvent)
+		t.Logf("Passed migration successfully: %+v", newEvent)
 	}
 
-	if !reflect.DeepEqual(*newEvent, SimEvent1Version3()) {
-		t.Errorf("expected: %+v recieved %+v", SimEvent1Version3(), *newEvent)
+	if !reflect.DeepEqual(newEvent, SimEvent1Version3()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version3(), newEvent)
 	}
 
 	testEvent = SimEvent1Version3()
@@ -54,11 +54,11 @@ func TestUpdateTable(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected passed migration, instead errored: %s", err)
 	} else {
-		t.Logf("Passed migration successfully: %+v", *newEvent)
+		t.Logf("Passed migration successfully: %+v", newEvent)
 	}
 
-	if !reflect.DeepEqual(*newEvent, SimEvent1Version4()) {
-		t.Errorf("expected: %+v recieved %+v", SimEvent1Version4(), *newEvent)
+	if !reflect.DeepEqual(newEvent, SimEvent1Version4()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version4(), newEvent)
 	}
 
 	testEvent = SimEvent1Version4()
@@ -68,11 +68,11 @@ func TestUpdateTable(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected passed migration, instead errored: %s", err)
 	} else {
-		t.Logf("Passed migration successfully: %+v", *newEvent)
+		t.Logf("Passed migration successfully: %+v", newEvent)
 	}
 
-	if !reflect.DeepEqual(*newEvent, SimEvent1Version5()) {
-		t.Errorf("expected: %+v recieved %+v", SimEvent1Version5(), *newEvent)
+	if !reflect.DeepEqual(newEvent, SimEvent1Version5()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version5(), newEvent)
 	}
 
 }

@@ -27,11 +27,11 @@ func TestAddTable(t *testing.T) {
 	if err != nil {
 		t.Errorf("Expected passed migration, instead errored: %s", err)
 	} else {
-		t.Logf("Passed migration successfully: %+v", *newEvent)
+		t.Logf("Passed migration successfully: %+v", newEvent)
 	}
 
-	if !reflect.DeepEqual(*newEvent, SimEvent1Version2()) {
-		t.Errorf("expected: %+v recieved %+v", SimEvent1Version2(), *newEvent)
+	if !reflect.DeepEqual(newEvent, SimEvent1Version2()) {
+		t.Errorf("expected: %+v recieved %+v", SimEvent1Version2(), newEvent)
 	}
 }
 

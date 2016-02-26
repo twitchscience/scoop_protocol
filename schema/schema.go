@@ -73,6 +73,10 @@ func (to *TableOption) IsEmpty() bool {
 	return len(to.DistKey) == 0 && len(to.SortKey) == 0
 }
 
+func (m *Migration) IsRemoveEvent() bool {
+	return m.TableOperation == remove
+}
+
 func (e *Event) addColumn(ColumnOperation ColumnOperation) error {
 	if ColumnOperation.Operation != add {
 		return ErrColumnOpNotAdd
