@@ -71,7 +71,6 @@ func (m *MigratorBackend) addTable() (Event, error) {
 
 	//in the process of adding columns, validate add columns as well.
 	for _, ColumnOperation := range m.possibleMigration.ColumnOperations {
-
 		err := m.currentEvent.addColumn(ColumnOperation)
 
 		if err != nil {
