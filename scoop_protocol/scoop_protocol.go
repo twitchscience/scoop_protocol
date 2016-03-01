@@ -30,8 +30,9 @@ type RowCopyRequest struct {
 }
 
 type ManifestRowCopyRequest struct {
-	ManifestURL string
-	TableName   string
+	ManifestURL  string
+	TableName    string
+	TableVersion int
 }
 
 type LoadCheckRequest struct {
