@@ -25,14 +25,14 @@ type Config struct {
 }
 
 type RowCopyRequest struct {
-	KeyName   string
-	TableName string
+	KeyName      string
+	TableName    string
+	TableVersion int
 }
 
 type ManifestRowCopyRequest struct {
-	ManifestURL  string
-	TableName    string
-	TableVersion int
+	ManifestURL string
+	TableName   string
 }
 
 type LoadCheckRequest struct {
