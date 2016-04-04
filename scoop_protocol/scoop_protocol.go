@@ -74,7 +74,7 @@ type AuthScoopSigner struct {
 
 var (
 	BadVerified        error = errors.New("Bad Signature")
-	transformerTypeMap       = map[string]string{
+	TransformerTypeMap       = map[string]string{
 		"ipCity":       "varchar(64)",
 		"ipCountry":    "varchar(2)",
 		"ipRegion":     "varchar(64)",
@@ -189,12 +189,12 @@ func (col *ColumnDefinition) GetCreationForm() string {
 	buf := bytes.NewBuffer(make([]byte, 0, 16))
 	buf.WriteString(col.OutboundName)
 	buf.WriteString(" ")
-	if translatedType, ok := transformerTypeMap[col.Transformer]; ok {
+	if translatedType, ok := TransformerTypeMap[col.Transformer]; ok {
 		buf.WriteString(translatedType)
 	} else if len(col.Transformer) > 0 && col.Transformer[0] == 'f' && col.Transformer[1] == '@' {
 		// Its a function transformer
 		canonicalName := col.Transformer[:strings.LastIndex(col.Transformer, "@")]
-		if translatedType, ok := transformerTypeMap[canonicalName]; ok {
+		if translatedType, ok := TransformerTypeMap[canonicalName]; ok {
 			buf.WriteString(translatedType)
 		} else {
 			buf.WriteString(col.Transformer)

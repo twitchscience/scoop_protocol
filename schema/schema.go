@@ -1,9 +1,12 @@
 package schema
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/twitchscience/scoop_protocol/scoop_protocol"
 )
 
 const add string = "add"
@@ -255,4 +258,41 @@ func (m *Migration) NewOutboundColsHashSet() HashSet {
 		outboundColNames[operation.OutboundName] = HashMember{}
 	}
 	return outboundColNames
+}
+
+func (m *Migration) GetColumnCreationString() string {
+	out := bytes.NewBuffer(make([]byte, 0, 256))
+	out.WriteRune('(')
+	for i, col := range m.ColumnOperations {
+		out.WriteString(col.NewColumnDefinition.GetCreationForm())
+		if i+1 != len(m.ColumnOperations) {
+			out.WriteRune(',')
+			out.WriteRune(' ')
+		}
+	}
+	out.WriteRune(')')
+	return out.String()
+}
+
+func (col *ColumnDefinition) GetCreationForm() string {
+	buf := bytes.NewBuffer(make([]byte, 0, 16))
+	buf.WriteString(col.OutboundName)
+	buf.WriteString(" ")
+	if translatedType, ok := scoop_protocol.TransformerTypeMap[col.Transformer]; ok {
+		buf.WriteString(translatedType)
+	} else if len(col.Transformer) > 0 && col.Transformer[0] == 'f' && col.Transformer[1] == '@' {
+		// Its a function transformer
+		canonicalName := col.Transformer[:strings.LastIndex(col.Transformer, "@")]
+		if translatedType, ok := scoop_protocol.TransformerTypeMap[canonicalName]; ok {
+			buf.WriteString(translatedType)
+		} else {
+			buf.WriteString(col.Transformer)
+		}
+	} else {
+		buf.WriteString(col.Transformer)
+	}
+	if len(col.ColumnCreationOptions) > 1 {
+		buf.WriteString(col.ColumnCreationOptions)
+	}
+	return buf.String()
 }
