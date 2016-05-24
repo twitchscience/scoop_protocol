@@ -22,12 +22,12 @@ type ColumnDefinition struct {
 type Config struct {
 	EventName string
 	Columns   []ColumnDefinition
+	Version   int
 }
 
 type RowCopyRequest struct {
-	KeyName      string
-	TableName    string
-	TableVersion int
+	KeyName   string
+	TableName string
 }
 
 type ManifestRowCopyRequest struct {
@@ -74,7 +74,7 @@ type AuthScoopSigner struct {
 
 var (
 	BadVerified        error = errors.New("Bad Signature")
-	TransformerTypeMap       = map[string]string{
+	transformerTypeMap       = map[string]string{
 		"ipCity":       "varchar(64)",
 		"ipCountry":    "varchar(2)",
 		"ipRegion":     "varchar(64)",
@@ -189,12 +189,12 @@ func (col *ColumnDefinition) GetCreationForm() string {
 	buf := bytes.NewBuffer(make([]byte, 0, 16))
 	buf.WriteString(col.OutboundName)
 	buf.WriteString(" ")
-	if translatedType, ok := TransformerTypeMap[col.Transformer]; ok {
+	if translatedType, ok := transformerTypeMap[col.Transformer]; ok {
 		buf.WriteString(translatedType)
 	} else if len(col.Transformer) > 0 && col.Transformer[0] == 'f' && col.Transformer[1] == '@' {
 		// Its a function transformer
 		canonicalName := col.Transformer[:strings.LastIndex(col.Transformer, "@")]
-		if translatedType, ok := TransformerTypeMap[canonicalName]; ok {
+		if translatedType, ok := transformerTypeMap[canonicalName]; ok {
 			buf.WriteString(translatedType)
 		} else {
 			buf.WriteString(col.Transformer)
