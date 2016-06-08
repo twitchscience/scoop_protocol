@@ -11,10 +11,11 @@ func TestConfig(t *testing.T) {
 	testConfig := Config{
 		"test",
 		[]ColumnDefinition{
-			ColumnDefinition{"", "test1", "int", "options?"},
-			ColumnDefinition{"", "test2", "int", "options?"},
-			ColumnDefinition{"", "test3", "int", "options?"},
+			{"", "test1", "int", "options?"},
+			{"", "test2", "int", "options?"},
+			{"", "test3", "int", "options?"},
 		},
+		0,
 	}
 	b, erro := s.SignJsonBody(testConfig)
 	if erro != nil {
@@ -37,10 +38,11 @@ func TestEmptyConfig(t *testing.T) {
 	testConfig := Config{
 		"test",
 		[]ColumnDefinition{
-			ColumnDefinition{"", "test1", "int", "options?"},
-			ColumnDefinition{"", "test2", "int", "options?"},
-			ColumnDefinition{},
+			{"", "test1", "int", "options?"},
+			{"", "test2", "int", "options?"},
+			{},
 		},
+		0,
 	}
 	b, erro := s.SignJsonBody(testConfig)
 	if erro != nil {
@@ -84,14 +86,15 @@ func TestColumnCreationString(t *testing.T) {
 	testConfig := Config{
 		"test",
 		[]ColumnDefinition{
-			ColumnDefinition{"", "test1", "int", "options?"},
-			ColumnDefinition{"", "test2", "int", "options?"},
-			ColumnDefinition{"", "test3", "ipCity", ""},
-			ColumnDefinition{"", "test4", "ipRegion", ""},
-			ColumnDefinition{"", "test5", "ipCountry", " sortkey"},
-			ColumnDefinition{"", "test6", "f@timestamp@unix", ""},
-			ColumnDefinition{"", "test7", "varchar", "(16)"},
+			{"", "test1", "int", "options?"},
+			{"", "test2", "int", "options?"},
+			{"", "test3", "ipCity", ""},
+			{"", "test4", "ipRegion", ""},
+			{"", "test5", "ipCountry", " sortkey"},
+			{"", "test6", "f@timestamp@unix", ""},
+			{"", "test7", "varchar", "(16)"},
 		},
+		0,
 	}
 	expected := `(test1 intoptions?,test2 intoptions?,test3 varchar(64),test4 varchar(64),test5 varchar(2) sortkey,test6 datetime,test7 varchar(16))`
 	if expected != testConfig.GetColumnCreationString() {
