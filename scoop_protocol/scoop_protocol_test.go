@@ -81,24 +81,3 @@ func TestRowCopyRequest(t *testing.T) {
 		t.Fail()
 	}
 }
-
-func TestColumnCreationString(t *testing.T) {
-	testConfig := Config{
-		"test",
-		[]ColumnDefinition{
-			{"", "test1", "int", "options?"},
-			{"", "test2", "int", "options?"},
-			{"", "test3", "ipCity", ""},
-			{"", "test4", "ipRegion", ""},
-			{"", "test5", "ipCountry", " sortkey"},
-			{"", "test6", "f@timestamp@unix", ""},
-			{"", "test7", "varchar", "(16)"},
-		},
-		0,
-	}
-	expected := `(test1 intoptions?,test2 intoptions?,test3 varchar(64),test4 varchar(64),test5 varchar(2) sortkey,test6 datetime,test7 varchar(16))`
-	if expected != testConfig.GetColumnCreationString() {
-		t.Logf("Expected %v got %v\n", expected, testConfig.GetColumnCreationString())
-		t.Fail()
-	}
-}
