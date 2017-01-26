@@ -65,6 +65,7 @@ func TestRowCopyRequest(t *testing.T) {
 	testConfig := RowCopyRequest{
 		"key",
 		"table",
+		0,
 	}
 	b, erro := s.SignJsonBody(testConfig)
 	if erro != nil {
