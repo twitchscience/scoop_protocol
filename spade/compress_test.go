@@ -9,7 +9,7 @@ import (
 )
 
 func TestCompression(t *testing.T) {
-	testEvent := NewEvent(time.Now(), net.IPv4(10, 0, 0, 0), "xForwardedFor", "uuid", "data")
+	testEvent := NewEvent(time.Now(), net.IPv4(10, 0, 0, 0), "xForwardedFor", "uuid", "data", "userAgent")
 	assert.NotNil(t, testEvent)
 
 	b, err := Compress(testEvent)

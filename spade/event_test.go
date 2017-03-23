@@ -25,6 +25,7 @@ var exEvent = NewEvent(
 	"192.168.0.1, 222.222.222.222",
 	"1",
 	randomString(2048),
+	"userAgent",
 )
 
 // These exist to ensure that the impact of proxying the chosen
