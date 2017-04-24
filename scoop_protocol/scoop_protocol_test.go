@@ -11,9 +11,9 @@ func TestConfig(t *testing.T) {
 	testConfig := Config{
 		"test",
 		[]ColumnDefinition{
-			{"", "test1", "int", "options?"},
-			{"", "test2", "int", "options?"},
-			{"", "test3", "int", "options?"},
+			{"", "test1", "int", "options?", "support"},
+			{"", "test2", "int", "options?", "support"},
+			{"", "test3", "int", "options?", "support"},
 		},
 		0,
 	}
@@ -38,8 +38,8 @@ func TestEmptyConfig(t *testing.T) {
 	testConfig := Config{
 		"test",
 		[]ColumnDefinition{
-			{"", "test1", "int", "options?"},
-			{"", "test2", "int", "options?"},
+			{"", "test1", "int", "options?", "support"},
+			{"", "test2", "int", "options?", "support"},
 			{},
 		},
 		0,
@@ -65,6 +65,7 @@ func TestRowCopyRequest(t *testing.T) {
 	testConfig := RowCopyRequest{
 		"key",
 		"table",
+		0,
 	}
 	b, erro := s.SignJsonBody(testConfig)
 	if erro != nil {
