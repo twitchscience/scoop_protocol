@@ -7,6 +7,23 @@ import (
 	"time"
 )
 
+// AnnotatedKinesisConfig is a Kinesis configuration annotated with meta information.
+type AnnotatedKinesisConfig struct {
+	StreamName       string
+	StreamType       string
+	AWSAccount       int64
+	Team             string
+	Version          int
+	Contact          string
+	Usage            string
+	ConsumingLibrary string
+	SpadeConfig      KinesisWriterConfig
+	LastEditedAt     time.Time
+	LastChangedBy    string
+	Dropped          bool
+	DroppedReason    string
+}
+
 // KinesisWriterConfig describes a Kinesis Writer that the processor uses to export data to a Kinesis Stream/Firehose
 type KinesisWriterConfig struct {
 	StreamName             string
