@@ -9,8 +9,6 @@ import (
 
 // AnnotatedKinesisConfig is a Kinesis configuration annotated with meta information.
 type AnnotatedKinesisConfig struct {
-	StreamName       string
-	StreamType       string
 	AWSAccount       int64
 	Team             string
 	Version          int
