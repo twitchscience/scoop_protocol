@@ -81,10 +81,10 @@ var filterFuncs = map[string]func(map[string]string) bool{
 	"isVod": func(fields map[string]string) bool {
 		return fields["vod_id"] != "" && fields["vod_type"] != "clip"
 	},
-	"isUserIDBlank": func(fields map[string]string) bool {
+	"isUserIDSet": func(fields map[string]string) bool {
 		return fields["user_id"] != ""
 	},
-	"isChannelIDBlank": func(fields map[string]string) bool {
+	"isChannelIDSet": func(fields map[string]string) bool {
 		return fields["channel_id"] != ""
 	},
 }
