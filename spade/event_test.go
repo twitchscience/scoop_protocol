@@ -26,6 +26,7 @@ var exEvent = NewEvent(
 	"1",
 	randomString(2048),
 	"userAgent",
+	"internal",
 )
 
 // These exist to ensure that the impact of proxying the chosen
