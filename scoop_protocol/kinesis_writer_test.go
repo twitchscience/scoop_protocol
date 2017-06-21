@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var FirehoseRedshiftStreamTestConfig = []byte(`
@@ -60,4 +61,16 @@ func TestRedshiftStreamAndStreamValidation(t *testing.T) {
 
 	// firehose->redshift streaming can only be used with firehose
 	assert.NotNil(t, config.Validate(), "redshift streaming can only be used with firehose")
+}
+
+func TestFieldRenaming(t *testing.T) {
+	config := KinesisWriterConfig{}
+	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
+	config.Events["minute-watched"].FieldRenames = map[string]string{
+		"country": "renamed_country",
+	}
+
+	require.Nil(t, config.Validate(), "config could not be validated")
+	assert.Equal(t, map[string]string{"country": "renamed_country", "device_id": "device_id"},
+		config.Events["minute-watched"].FullFieldMap)
 }
