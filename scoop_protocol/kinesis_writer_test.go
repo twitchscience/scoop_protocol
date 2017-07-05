@@ -74,3 +74,34 @@ func TestFieldRenaming(t *testing.T) {
 	assert.Equal(t, map[string]string{"country": "renamed_country", "device_id": "device_id"},
 		config.Events["minute-watched"].FullFieldMap)
 }
+
+func TestFilterFuncs(t *testing.T) {
+	testCases := []struct {
+		filterName string
+		event      map[string]string
+		result     bool
+	}{
+		{
+			"isAGSEvent",
+			map[string]string{"adg_product_id": "600505cc-de2f-4b99-9960-c47ee5d23f04"},
+			true,
+		},
+		{"isAGSEvent", map[string]string{"adg_product_id": ""}, false},
+		{"isAGSEvent", map[string]string{"time": ""}, false},
+		{"isChannelIDSet", map[string]string{"channel_id": "xxx"}, true},
+		{"isChannelIDSet", map[string]string{"channel_id": ""}, false},
+		{"isChannelIDSet", map[string]string{"time": ""}, false},
+		{"isUserIDSet", map[string]string{"user_id": "xxx"}, true},
+		{"isUserIDSet", map[string]string{"user_id": ""}, false},
+		{"isUserIDSet", map[string]string{"time": ""}, false},
+		{"isVod", map[string]string{"vod_id": "xx", "vod_type": "archive"}, true},
+		{"isVod", map[string]string{"vod_id": "xx", "vod_type": "clip"}, false},
+		{"isVod", map[string]string{"vod_id": "", "vod_type": "archive"}, false},
+		{"isVod", map[string]string{"vod_id": "xx"}, true},
+		{"isVod", map[string]string{"vod_id": "xx", "vod_type": ""}, true},
+		{"isVod", map[string]string{"time": ""}, false},
+	}
+	for _, tc := range testCases {
+		assert.Equal(t, tc.result, filterFuncs[tc.filterName](tc.event))
+	}
+}
