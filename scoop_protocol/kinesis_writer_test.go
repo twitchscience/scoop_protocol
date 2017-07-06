@@ -42,7 +42,7 @@ var FirehoseRedshiftStreamTestConfig = []byte(`
 func TestConfigValidation(t *testing.T) {
 	config := KinesisWriterConfig{}
 	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
-	assert.Nil(t, config.Validate(), "config could not be validated")
+	assert.NoError(t, config.Validate(), "config could not be validated")
 }
 
 func TestRedshiftStreamAndCompressValidation(t *testing.T) {
@@ -51,7 +51,7 @@ func TestRedshiftStreamAndCompressValidation(t *testing.T) {
 	config.Compress = true
 
 	// firehose->redshift streaming cannot be used with compress mode
-	assert.NotNil(t, config.Validate(), "redshift streaming and compress cannot both be on")
+	assert.Error(t, config.Validate(), "redshift streaming and compress cannot both be on")
 }
 
 func TestRedshiftStreamAndStreamValidation(t *testing.T) {
@@ -60,7 +60,7 @@ func TestRedshiftStreamAndStreamValidation(t *testing.T) {
 	config.StreamType = "stream"
 
 	// firehose->redshift streaming can only be used with firehose
-	assert.NotNil(t, config.Validate(), "redshift streaming can only be used with firehose")
+	assert.Error(t, config.Validate(), "redshift streaming can only be used with firehose")
 }
 
 func TestFieldRenaming(t *testing.T) {
@@ -70,9 +70,18 @@ func TestFieldRenaming(t *testing.T) {
 		"country": "renamed_country",
 	}
 
-	require.Nil(t, config.Validate(), "config could not be validated")
+	require.NoError(t, config.Validate(), "config could not be validated")
 	assert.Equal(t, map[string]string{"country": "renamed_country", "device_id": "device_id"},
 		config.Events["minute-watched"].FullFieldMap)
+}
+
+func TestRegionValidation(t *testing.T) {
+	config := KinesisWriterConfig{}
+	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
+	config.StreamRegion = "us-west-2"
+	assert.NoError(t, config.Validate(), "valid region didn't work")
+	config.StreamRegion = "us-west-3"
+	assert.Error(t, config.Validate(), "invalid region worked")
 }
 
 func TestFilterFuncs(t *testing.T) {
