@@ -109,6 +109,9 @@ func TestFilterFuncs(t *testing.T) {
 		{"isVod", map[string]string{"vod_id": "xx"}, true},
 		{"isVod", map[string]string{"vod_id": "xx", "vod_type": ""}, true},
 		{"isVod", map[string]string{"time": ""}, false},
+		{"isLiveClipContent", map[string]string{"time": ""}, false},
+		{"isLiveClipContent", map[string]string{"source_content_type": "other"}, false},
+		{"isLiveClipContent", map[string]string{"source_content_type": "live"}, true},
 	}
 	for _, tc := range testCases {
 		assert.Equal(t, tc.result, filterFuncs[tc.filterName](tc.event))
