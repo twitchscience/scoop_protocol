@@ -112,6 +112,9 @@ func TestFilterFuncs(t *testing.T) {
 		{"isLiveClipContent", map[string]string{"time": ""}, false},
 		{"isLiveClipContent", map[string]string{"source_content_type": "other"}, false},
 		{"isLiveClipContent", map[string]string{"source_content_type": "live"}, true},
+		{"isTwilightApp", map[string]string{"time": ""}, false},
+		{"isTwilightApp", map[string]string{"client_app": "non-twilight"}, false},
+		{"isTwilightApp", map[string]string{"client_app": "twilight"}, true},
 	}
 	for _, tc := range testCases {
 		assert.Equal(t, tc.result, filterFuncs[tc.filterName](tc.event))
