@@ -20,6 +20,17 @@ var FirehoseRedshiftStreamTestConfig = []byte(`
                     "country",
                     "device_id"
                 ]
+            },
+            "pageview": {
+                "Fields": [
+                    "login"
+                ],
+                "Filter": "isOneOf",
+                "FilterParameters": [{
+                    "Field": "login",
+                    "Values": ["test_login"],
+                    "Operator": "in_set"
+                }]
             }
         },
         "BufferSize": 1024,
@@ -84,6 +95,43 @@ func TestRegionValidation(t *testing.T) {
 	assert.Error(t, config.Validate(), "invalid region worked")
 }
 
+func TestFilterFuncValidation(t *testing.T) {
+	config := KinesisWriterConfig{}
+	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
+	config.Events["pageview"].Filter = "invalid_filter"
+	assert.Error(t, config.Validate(), "invalid filter func worked")
+}
+
+func TestNoFilterFuncParametersValidation(t *testing.T) {
+	config := KinesisWriterConfig{}
+	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
+	config.Events["pageview"].FilterParameters = nil
+	assert.Error(t, config.Validate(), "Providing filter with no parameters worked")
+}
+
+func TestInvalidFilterFuncParametersValidation(t *testing.T) {
+	testCases := []struct {
+		fieldValue string
+		values     []string
+		op         FilterOperator
+		msg        string
+	}{
+		{"", []string{"b", "a"}, IN_SET, "Providing empty filter field worked"},
+		{"a", nil, IN_SET, "Providing nil filter values worked"},
+		{"a", []string{}, IN_SET, "Providing no filter values worked"},
+		{"a", []string{"b", "a"}, "bad", "Providing invalid filter operator worked"},
+		{"a", []string{"b", "a"}, "", "Providing empty filter operator worked"},
+	}
+	config := KinesisWriterConfig{}
+	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
+	for _, tc := range testCases {
+		config.Events["pageview"].FilterParameters = []*KinesisEventFilterConfig{
+			&KinesisEventFilterConfig{tc.fieldValue, tc.values, tc.op},
+		}
+		assert.Error(t, config.Validate(), tc.msg)
+	}
+}
+
 func TestFilterFuncs(t *testing.T) {
 	testCases := []struct {
 		filterName string
@@ -117,6 +165,80 @@ func TestFilterFuncs(t *testing.T) {
 		{"isTwilightApp", map[string]string{"client_app": "twilight"}, true},
 	}
 	for _, tc := range testCases {
-		assert.Equal(t, tc.result, filterFuncs[tc.filterName](tc.event))
+		assert.Equal(t, tc.result, filterFuncs[tc.filterName](tc.event),
+			"filter: %v; map: %v", tc.filterName, tc.event)
+	}
+}
+
+func TestEventFilterMatch(t *testing.T) {
+	testCases := []struct {
+		filterValue  string
+		filterConfig *KinesisEventFilterConfig
+		result       bool
+	}{
+		{"a", &KinesisEventFilterConfig{"x", []string{"a"}, IN_SET}, true},
+		{"a", &KinesisEventFilterConfig{"x", []string{"b", "a"}, IN_SET}, true},
+		{"a", &KinesisEventFilterConfig{"x", []string{"b", "c"}, IN_SET}, false},
+		{"a", &KinesisEventFilterConfig{"x", []string{""}, IN_SET}, false},
+		{"", &KinesisEventFilterConfig{"x", []string{"b", "c"}, IN_SET}, false},
+		{"", &KinesisEventFilterConfig{"x", []string{""}, IN_SET}, true},
+		{"a", &KinesisEventFilterConfig{"x", []string{"a"}, NOT_IN_SET}, false},
+		{"a", &KinesisEventFilterConfig{"x", []string{"b", "a"}, NOT_IN_SET}, false},
+		{"a", &KinesisEventFilterConfig{"x", []string{"b", "c"}, NOT_IN_SET}, true},
+		{"a", &KinesisEventFilterConfig{"x", []string{""}, NOT_IN_SET}, true},
+		{"", &KinesisEventFilterConfig{"x", []string{"b", "c"}, NOT_IN_SET}, true},
+		{"", &KinesisEventFilterConfig{"x", []string{""}, NOT_IN_SET}, false},
+	}
+	for _, tc := range testCases {
+		assert.Equal(t, tc.result, tc.filterConfig.Match(tc.filterValue),
+			"value: %v; config: %v", tc.filterValue, tc.filterConfig)
+	}
+
+}
+
+func TestFilterFuncGenerators(t *testing.T) {
+	testCases := []struct {
+		filterName string
+		event      map[string]string
+		filters    []*KinesisEventFilterConfig
+		result     bool
+	}{
+		{
+			"isOneOf",
+			map[string]string{"f1": "a", "f2": "b"},
+			[]*KinesisEventFilterConfig{
+				&KinesisEventFilterConfig{"f1", []string{"b", "a"}, IN_SET},
+				&KinesisEventFilterConfig{"f2", []string{"c", "d"}, NOT_IN_SET},
+				&KinesisEventFilterConfig{"f3", []string{""}, IN_SET},
+			},
+			true,
+		},
+		{
+			"isOneOf",
+			map[string]string{"f1": "a", "f2": "b"},
+			[]*KinesisEventFilterConfig{
+				&KinesisEventFilterConfig{"f1", []string{"b", "a"}, IN_SET},
+				&KinesisEventFilterConfig{"f2", []string{"c", "d"}, NOT_IN_SET},
+				&KinesisEventFilterConfig{"f3", []string{""}, IN_SET},
+				&KinesisEventFilterConfig{"f3", []string{""}, NOT_IN_SET},
+			},
+			false,
+		},
+		{
+			"isOneOf",
+			map[string]string{"f1": "a", "f2": "b"},
+			[]*KinesisEventFilterConfig{
+				&KinesisEventFilterConfig{"f1", []string{"b", "a"}, IN_SET},
+				&KinesisEventFilterConfig{"f2", []string{"c", "d"}, NOT_IN_SET},
+				&KinesisEventFilterConfig{"f3", []string{""}, IN_SET},
+				&KinesisEventFilterConfig{"f4", []string{""}, NOT_IN_SET},
+			},
+			false,
+		},
+	}
+	for _, tc := range testCases {
+		filterFunc := filterFuncGenerators[tc.filterName](tc.filters)
+		assert.Equal(t, tc.result, filterFunc(tc.event),
+			"filter: %v; map: %v; filters: %v", tc.filterName, tc.event, tc.filters)
 	}
 }
