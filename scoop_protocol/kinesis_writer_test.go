@@ -53,7 +53,7 @@ var FirehoseRedshiftStreamTestConfig = []byte(`
 func TestConfigValidation(t *testing.T) {
 	config := KinesisWriterConfig{}
 	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
-	assert.NoError(t, config.Validate(), "config could not be validated")
+	assert.NoError(t, config.Validate(nil), "config could not be validated")
 }
 
 func TestRedshiftStreamAndCompressValidation(t *testing.T) {
@@ -62,7 +62,7 @@ func TestRedshiftStreamAndCompressValidation(t *testing.T) {
 	config.Compress = true
 
 	// firehose->redshift streaming cannot be used with compress mode
-	assert.Error(t, config.Validate(), "redshift streaming and compress cannot both be on")
+	assert.Error(t, config.Validate(nil), "redshift streaming and compress cannot both be on")
 }
 
 func TestRedshiftStreamAndStreamValidation(t *testing.T) {
@@ -71,7 +71,7 @@ func TestRedshiftStreamAndStreamValidation(t *testing.T) {
 	config.StreamType = "stream"
 
 	// firehose->redshift streaming can only be used with firehose
-	assert.Error(t, config.Validate(), "redshift streaming can only be used with firehose")
+	assert.Error(t, config.Validate(nil), "redshift streaming can only be used with firehose")
 }
 
 func TestFieldRenaming(t *testing.T) {
@@ -81,7 +81,7 @@ func TestFieldRenaming(t *testing.T) {
 		"country": "renamed_country",
 	}
 
-	require.NoError(t, config.Validate(), "config could not be validated")
+	require.NoError(t, config.Validate(nil), "config could not be validated")
 	assert.Equal(t, map[string]string{"country": "renamed_country", "device_id": "device_id"},
 		config.Events["minute-watched"].FullFieldMap)
 }
@@ -90,23 +90,26 @@ func TestRegionValidation(t *testing.T) {
 	config := KinesisWriterConfig{}
 	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
 	config.StreamRegion = "us-west-2"
-	assert.NoError(t, config.Validate(), "valid region didn't work")
+	assert.NoError(t, config.Validate(nil), "valid region didn't work")
 	config.StreamRegion = "us-west-3"
-	assert.Error(t, config.Validate(), "invalid region worked")
+	assert.Error(t, config.Validate(nil), "invalid region worked")
 }
 
 func TestFilterFuncValidation(t *testing.T) {
 	config := KinesisWriterConfig{}
 	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
+	commonFilters := map[string]EventFilterFunc{"valid_filter": NoopFilter}
 	config.Events["pageview"].Filter = "invalid_filter"
-	assert.Error(t, config.Validate(), "invalid filter func worked")
+	assert.Error(t, config.Validate(commonFilters), "invalid filter func worked")
+	config.Events["pageview"].Filter = "valid_filter"
+	assert.NoError(t, config.Validate(commonFilters), "valid filter func did not work")
 }
 
 func TestNoFilterFuncParametersValidation(t *testing.T) {
 	config := KinesisWriterConfig{}
 	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
 	config.Events["pageview"].FilterParameters = nil
-	assert.Error(t, config.Validate(), "Providing filter with no parameters worked")
+	assert.Error(t, config.Validate(nil), "Providing filter with no parameters worked")
 }
 
 func TestInvalidFilterFuncParametersValidation(t *testing.T) {
@@ -126,47 +129,114 @@ func TestInvalidFilterFuncParametersValidation(t *testing.T) {
 	_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
 	for _, tc := range testCases {
 		config.Events["pageview"].FilterParameters = []*KinesisEventFilterConfig{
-			&KinesisEventFilterConfig{tc.fieldValue, tc.values, tc.op},
+			{tc.fieldValue, tc.values, tc.op},
 		}
-		assert.Error(t, config.Validate(), tc.msg)
+		assert.Error(t, config.Validate(nil), tc.msg)
 	}
 }
 
-func TestFilterFuncs(t *testing.T) {
+func TestTestableKinesisEventFilter(t *testing.T) {
 	testCases := []struct {
-		filterName string
-		event      map[string]string
-		result     bool
+		name              string
+		config            []*KinesisEventFilterConfig
+		matchingEvents    []map[string]string
+		nonMatchingEvents []map[string]string
 	}{
 		{
-			"isAGSEvent",
-			map[string]string{"adg_product_id": "600505cc-de2f-4b99-9960-c47ee5d23f04"},
-			true,
+			name: "inSet",
+			config: []*KinesisEventFilterConfig{{
+				Field:    "propa",
+				Values:   []string{"a", "b"},
+				Operator: IN_SET,
+			}, {
+				Field:    "propb",
+				Values:   []string{"b", ""},
+				Operator: IN_SET,
+			}},
+			matchingEvents: []map[string]string{
+				{"propa": "a"},
+				{"propa": "a", "propb": "b"},
+				{"propa": "b", "propb": ""},
+			},
+			nonMatchingEvents: []map[string]string{
+				{},
+				{"propb": "b"},
+				{"propa": "b", "propb": "c"},
+				{"propa": "c", "propb": "b"},
+			},
 		},
-		{"isAGSEvent", map[string]string{"adg_product_id": ""}, false},
-		{"isAGSEvent", map[string]string{"time": ""}, false},
-		{"isChannelIDSet", map[string]string{"channel_id": "xxx"}, true},
-		{"isChannelIDSet", map[string]string{"channel_id": ""}, false},
-		{"isChannelIDSet", map[string]string{"time": ""}, false},
-		{"isUserIDSet", map[string]string{"user_id": "xxx"}, true},
-		{"isUserIDSet", map[string]string{"user_id": ""}, false},
-		{"isUserIDSet", map[string]string{"time": ""}, false},
-		{"isVod", map[string]string{"vod_id": "xx", "vod_type": "archive"}, true},
-		{"isVod", map[string]string{"vod_id": "xx", "vod_type": "clip"}, false},
-		{"isVod", map[string]string{"vod_id": "", "vod_type": "archive"}, false},
-		{"isVod", map[string]string{"vod_id": "xx"}, true},
-		{"isVod", map[string]string{"vod_id": "xx", "vod_type": ""}, true},
-		{"isVod", map[string]string{"time": ""}, false},
-		{"isLiveClipContent", map[string]string{"time": ""}, false},
-		{"isLiveClipContent", map[string]string{"source_content_type": "other"}, false},
-		{"isLiveClipContent", map[string]string{"source_content_type": "live"}, true},
-		{"isTwilightApp", map[string]string{"time": ""}, false},
-		{"isTwilightApp", map[string]string{"client_app": "non-twilight"}, false},
-		{"isTwilightApp", map[string]string{"client_app": "twilight"}, true},
+		{
+			name: "notInSet",
+			config: []*KinesisEventFilterConfig{{
+				Field:    "propa",
+				Values:   []string{"a", "b"},
+				Operator: NOT_IN_SET,
+			}, {
+				Field:    "propb",
+				Values:   []string{"b", "c", ""},
+				Operator: NOT_IN_SET,
+			}},
+			matchingEvents: []map[string]string{
+				{"propb": "a"},
+				{"propa": "c", "propb": "a"},
+			},
+			nonMatchingEvents: []map[string]string{
+				{},
+				{"propa": "a"},
+				{"propb": "b"},
+				{"propa": "a", "propb": "a"},
+				{"propa": "c", "propb": "b"},
+				{"propa": "a", "propb": "b"},
+			},
+		},
+		{
+			name: "mixed",
+			config: []*KinesisEventFilterConfig{{
+				Field:    "propa",
+				Values:   []string{"a", "b"},
+				Operator: IN_SET,
+			}, {
+				Field:    "propb",
+				Values:   []string{"b", "c"},
+				Operator: NOT_IN_SET,
+			}},
+			matchingEvents: []map[string]string{
+				{"propa": "a"},
+				{"propa": "a", "propb": "a"},
+			},
+			nonMatchingEvents: []map[string]string{
+				{},
+				{"propa": "c"},
+				{"propb": "a"},
+				{"propa": "a", "propb": "b"},
+				{"propa": "c", "propb": "a"},
+			},
+		},
 	}
 	for _, tc := range testCases {
-		assert.Equal(t, tc.result, filterFuncs[tc.filterName](tc.event),
-			"filter: %v; map: %v", tc.filterName, tc.event)
+		tkef := TestableKinesisEventFilter{
+			Config:            tc.config,
+			MatchingEvents:    tc.matchingEvents,
+			NonMatchingEvents: tc.nonMatchingEvents,
+		}
+		_, err := tkef.Build()
+		assert.NoError(t, err, "%s ok", tc.name)
+		for _, me := range tc.matchingEvents {
+			tkef = TestableKinesisEventFilter{
+				Config:            tc.config,
+				NonMatchingEvents: []map[string]string{me},
+			}
+			_, err = tkef.Build()
+			assert.Error(t, err, "%s matching", tc.name)
+		}
+		for _, nme := range tc.nonMatchingEvents {
+			tkef = TestableKinesisEventFilter{
+				Config:         tc.config,
+				MatchingEvents: []map[string]string{nme},
+			}
+			_, err = tkef.Build()
+			assert.Error(t, err, "%s not matching", tc.name)
+		}
 	}
 }
 
@@ -207,9 +277,9 @@ func TestFilterFuncGenerators(t *testing.T) {
 			"isOneOf",
 			map[string]string{"f1": "a", "f2": "b"},
 			[]*KinesisEventFilterConfig{
-				&KinesisEventFilterConfig{"f1", []string{"b", "a"}, IN_SET},
-				&KinesisEventFilterConfig{"f2", []string{"c", "d"}, NOT_IN_SET},
-				&KinesisEventFilterConfig{"f3", []string{""}, IN_SET},
+				{"f1", []string{"b", "a"}, IN_SET},
+				{"f2", []string{"c", "d"}, NOT_IN_SET},
+				{"f3", []string{""}, IN_SET},
 			},
 			true,
 		},
@@ -217,10 +287,10 @@ func TestFilterFuncGenerators(t *testing.T) {
 			"isOneOf",
 			map[string]string{"f1": "a", "f2": "b"},
 			[]*KinesisEventFilterConfig{
-				&KinesisEventFilterConfig{"f1", []string{"b", "a"}, IN_SET},
-				&KinesisEventFilterConfig{"f2", []string{"c", "d"}, NOT_IN_SET},
-				&KinesisEventFilterConfig{"f3", []string{""}, IN_SET},
-				&KinesisEventFilterConfig{"f3", []string{""}, NOT_IN_SET},
+				{"f1", []string{"b", "a"}, IN_SET},
+				{"f2", []string{"c", "d"}, NOT_IN_SET},
+				{"f3", []string{""}, IN_SET},
+				{"f3", []string{""}, NOT_IN_SET},
 			},
 			false,
 		},
@@ -228,10 +298,10 @@ func TestFilterFuncGenerators(t *testing.T) {
 			"isOneOf",
 			map[string]string{"f1": "a", "f2": "b"},
 			[]*KinesisEventFilterConfig{
-				&KinesisEventFilterConfig{"f1", []string{"b", "a"}, IN_SET},
-				&KinesisEventFilterConfig{"f2", []string{"c", "d"}, NOT_IN_SET},
-				&KinesisEventFilterConfig{"f3", []string{""}, IN_SET},
-				&KinesisEventFilterConfig{"f4", []string{""}, NOT_IN_SET},
+				{"f1", []string{"b", "a"}, IN_SET},
+				{"f2", []string{"c", "d"}, NOT_IN_SET},
+				{"f3", []string{""}, IN_SET},
+				{"f4", []string{""}, NOT_IN_SET},
 			},
 			false,
 		},
