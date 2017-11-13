@@ -312,3 +312,45 @@ func TestFilterFuncGenerators(t *testing.T) {
 			"filter: %v; map: %v; filters: %v", tc.filterName, tc.event, tc.filters)
 	}
 }
+
+func TestRedshifAllFieldsValidation(t *testing.T) {
+	testCases := []struct {
+		msg   string
+		setup func(*KinesisWriterConfig)
+		err   string
+	}{
+		{
+			"all fields cannot be used with fields",
+			func(config *KinesisWriterConfig) {},
+			"fields must be empty when using AllFields in minute-watched",
+		},
+		{
+			"all fields cannot be used with fieldRenames",
+			func(config *KinesisWriterConfig) {
+				config.Events["minute-watched"].Fields = nil
+				config.Events["minute-watched"].FieldRenames = map[string]string{
+					"country": "renamed_country",
+				}
+			},
+			"fieldRenames must be empty when using AllFields in minute-watched",
+		},
+		{
+			"all fields correctly setup",
+			func(config *KinesisWriterConfig) {
+				config.Events["minute-watched"].Fields = nil
+			},
+			"",
+		},
+	}
+	for _, tc := range testCases {
+		config := KinesisWriterConfig{}
+		_ = json.Unmarshal(FirehoseRedshiftStreamTestConfig, &config)
+		config.Events["minute-watched"].AllFields = true
+		tc.setup(&config)
+		if len(tc.err) > 0 {
+			assert.EqualError(t, config.Validate(nil), tc.err, tc.msg)
+		} else {
+			assert.Empty(t, config.Validate(nil), tc.msg)
+		}
+	}
+}
