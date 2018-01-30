@@ -1,3 +1,4 @@
+***NOTE: This project is no longer being updated publicly.***
 
 # License
 The MIT License (MIT)
